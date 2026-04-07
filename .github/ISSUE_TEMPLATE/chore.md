@@ -1,24 +1,20 @@
 ---
-name: "Chore"
-about: "리팩토링, 설정, 의존성 업데이트 등"
-title: "[CHORE] "
-labels: chore
+name: "♻️ Refactor Request"
+about: "코드의 기능 변경 없이 구조나 가독성을 개선합니다."
+title: "[Refactor]: "
+labels: ":recycle: refactor"
 assignees: ""
 ---
 
-## 작업 내용
-무엇을 해야 하는지 설명해주세요.
+## 🧐 기존 코드의 문제점
+- 예: 중복 로직이 많아 유지보수가 어려움, 메서드 책임이 너무 큼 등
 
-## 작업 목표
-이 작업이 완료되면 어떠한 상태가 되어야 하는지 적어주세요.
+## 🎯 개선 방향
+- [ ] 
+- [ ] 
 
-## 세부 작업
-- [ ]
-- [ ]
-- [ ]
+## ⚠️ 주의 사항
 
-## 관련 서비스
-- [ ] backend-spring
-- [ ] game-engine
-- [ ] ai-pipeline
-- [ ] frontend
+## ✅ 영향 범위 확인
+- [ ] 기존 기능이 동일하게 동작하는가?
+- [ ] 관련 테스트 코드가 성공하는가?

@@ -1,22 +1,15 @@
 ---
-name: "Feature Request"
-about: "새로운 기능을 제안할 때 사용해주세요"
+name: "✨Feature Request"
+about: "새로운 기능을 제안하거나 구현 계획을 작성합니다."
 title: "[FEAT] "
-labels: enhancement
+labels: "feat"
 assignees: ""
 ---
 
-## 기능 설명
-어떤 기능인지 명확하게 설명해주세요.
+## 📝 기능 개요
 
-## 배경
-왜 이 기능이 필요한지 설명해주세요.
+## ✅ 작업 상세 내용 (Todo)
+- [ ] 
+- [ ] 
 
-## 구현 아이디어
-구현 방법에 대한 아이디어가 있다면 적어주세요.
-
-## 관련 서비스
-- [ ] backend-spring
-- [ ] game-engine
-- [ ] ai-pipeline
-- [ ] frontend
+## 📌 기타 참고 사항
