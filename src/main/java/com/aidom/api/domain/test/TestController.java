@@ -15,25 +15,21 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/test/errors")
 public class TestController {
 
-  /** 1. 정상 응답 테스트 (200 OK)
-   * 공통 래핑 DTO 없이 데이터를 그대로 반환하는 RESTful 방식.
-   */
+  /** 1. 정상 응답 테스트 (200 OK) 공통 래핑 DTO 없이 데이터를 그대로 반환하는 RESTful 방식. */
   @GetMapping("/success")
   public ResponseEntity<TestResponseDto> successResponse() {
     return ResponseEntity.ok(new TestResponseDto("AIDOM", 1));
   }
 
-  /** 2. 커스텀 예외 테스트 (예: 404 Not Found)
-   * 비즈니스 로직 처리 중 발생한 예외를 ErrorCode와 함께 던진다.
-   */
+  /** 2. 커스텀 예외 테스트 (예: 404 Not Found) 비즈니스 로직 처리 중 발생한 예외를 ErrorCode와 함께 던진다. */
   @GetMapping("/custom")
   public void throwCustomException() {
     throw new CustomException(ErrorCode.ENTITY_NOT_FOUND);
   }
 
   /**
-   * 3. 유효성 검증 예외 테스트 (400 Bad Request)
-   * @Valid 어노테이션을 통해 DTO 검증 실패 시 MethodArgumentNotValidException이 발생.
+   * 3. 유효성 검증 예외 테스트 (400 Bad Request) @Valid 어노테이션을 통해 DTO 검증 실패 시
+   * MethodArgumentNotValidException이 발생.
    */
   @PostMapping("/validation")
   public ResponseEntity<String> throwValidationException(
@@ -41,14 +37,11 @@ public class TestController {
     return ResponseEntity.ok("검증 성공: " + request.name());
   }
 
-  /** 4. 서버 내부 에러 테스트 (500 Internal Server Error)
-   * 핸들링되지 않은 런타임 에러가 발생했을 때의 fallback 응답을 확인.
-   */
+  /** 4. 서버 내부 에러 테스트 (500 Internal Server Error) 핸들링되지 않은 런타임 에러가 발생했을 때의 fallback 응답을 확인. */
   @GetMapping("/server")
   public void throwServerException() {
     throw new RuntimeException("개발자가 의도치 않은 런타임 에러가 발생했습니다");
   }
-
 
   public record TestResponseDto(String name, Integer version) {}
 

@@ -3,7 +3,6 @@ package com.aidom.api.global.error;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -17,23 +16,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   public record ValidationError(String field, String message) {}
 
-  /** @Valid 또는 @Validated에 의한 검증 실패 시 발생하는 예외를 가로채어 ProblemDetail 형식으로 반환 **/
+  /**
+   * @Valid 또는 @Validated에 의한 검증 실패 시 발생하는 예외를 가로채어 ProblemDetail 형식으로 반환 *
+   */
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
-          MethodArgumentNotValidException ex,
-          @NonNull HttpHeaders headers,
-          @NonNull HttpStatusCode status,
-          @NonNull WebRequest request) {
+      MethodArgumentNotValidException ex,
+      @NonNull HttpHeaders headers,
+      @NonNull HttpStatusCode status,
+      @NonNull WebRequest request) {
 
-    List<ValidationError> errors = ex.getBindingResult().getFieldErrors().stream()
+    List<ValidationError> errors =
+        ex.getBindingResult().getFieldErrors().stream()
             .map(error -> new ValidationError(error.getField(), error.getDefaultMessage()))
             .toList();
 
     // ProblemDetail 기본 설정
-    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-            status,
-            "요청 데이터에 유효하지 않은 값이 포함되어 있습니다."
-    );
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(status, "요청 데이터에 유효하지 않은 값이 포함되어 있습니다.");
 
     // 표준 필드 커스텀 (type, title)
     problemDetail.setType(URI.create("https://aidom.kr/errors/validation-failed"));
