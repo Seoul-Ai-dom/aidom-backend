@@ -1,4 +1,4 @@
-package com.aidom.api.global.common;
+package com.aidom.api.global.common.entity;
 
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
