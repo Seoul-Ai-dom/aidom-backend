@@ -3,28 +3,33 @@ package com.aidom.api.global.error;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import org.springframework.http.*;
-import org.springframework.lang.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   public record ValidationError(String field, String message) {}
 
   /**
-   * @Valid 또는 @Validated에 의한 검증 실패 시 발생하는 예외를 가로채어 ProblemDetail 형식으로 반환 *
+   * @Valid 또는 @Validated에 의한 검증 실패 시 발생하는 예외를 가로채어 ProblemDetail 형식으로 반환
    */
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
       MethodArgumentNotValidException ex,
-      @NonNull HttpHeaders headers,
-      @NonNull HttpStatusCode status,
-      @NonNull WebRequest request) {
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
 
     List<ValidationError> errors =
         ex.getBindingResult().getFieldErrors().stream()
@@ -40,11 +45,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     problemDetail.setTitle("입력값이 올바르지 않습니다");
 
     // 비표준 커스텀 필드 추가 (errorCode, timestamp, errors 배열)
-    problemDetail.setProperty("errorCode", "VALIDATION_001");
+    problemDetail.setProperty("errorCode", ErrorCode.INVALID_INPUT_VALUE.getCode());
     problemDetail.setProperty("timestamp", Instant.now()); // ISO-8601 포맷(Z)
     problemDetail.setProperty("errors", errors);
 
-    return ResponseEntity.status(status).body(problemDetail);
+    return handleExceptionInternal(ex, problemDetail, headers, status, request);
   }
 
   @ExceptionHandler(CustomException.class)
@@ -58,7 +63,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // RFC 7807 표준 외에 클라이언트가 참고할 커스텀 속성(property) 추가
     problemDetail.setType(URI.create("about:blank"));
     problemDetail.setTitle(errorCode.name());
-    problemDetail.setProperty("customErrorCode", errorCode.getCode());
+    problemDetail.setProperty("errorCode", errorCode.getCode());
 
     return problemDetail;
   }
@@ -66,11 +71,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   /** 핸들링되지 않은 최상위 예외를 처리합니다. (500 Error) */
   @ExceptionHandler(Exception.class)
   public ProblemDetail handleAllUncaughtException(Exception e) {
+    log.error("Uncaught exception", e);
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(
             HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부에서 예기치 않은 오류가 발생했습니다.");
     problemDetail.setTitle(ErrorCode.INTERNAL_SERVER_ERROR.name());
-    problemDetail.setProperty("customErrorCode", ErrorCode.INTERNAL_SERVER_ERROR.getCode());
+    problemDetail.setProperty("errorCode", ErrorCode.INTERNAL_SERVER_ERROR.getCode());
 
     return problemDetail;
   }
