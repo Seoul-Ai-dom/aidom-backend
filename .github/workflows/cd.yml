@@ -58,8 +58,9 @@ jobs:
             # Docker 네트워크 생성 (없으면)
             docker network create aidom-network 2>/dev/null || true
 
-            # MySQL 컨테이너가 없으면 생성
+            # MySQL 컨테이너 관리
             if ! docker ps -a --format '{{.Names}}' | grep -q '^aidom-mysql$'; then
+              # 컨테이너가 없으면 생성
               docker run -d \
                 --name aidom-mysql \
                 --network aidom-network \
@@ -70,16 +71,26 @@ jobs:
                 -e MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
                 -e MYSQL_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }} \
                 mysql:8.0
+            elif ! docker ps --format '{{.Names}}' | grep -q '^aidom-mysql$'; then
+              # 컨테이너가 존재하지만 멈춰있으면 시작
+              docker start aidom-mysql
+            fi
 
-              # MySQL 준비 대기
-              echo "Waiting for MySQL to be ready..."
-              for i in $(seq 1 12); do
-                if docker exec aidom-mysql mysqladmin ping -h localhost --silent 2>/dev/null; then
-                  echo "MySQL is ready"
-                  break
-                fi
-                sleep 5
-              done
+            # MySQL 준비 대기
+            echo "Waiting for MySQL to be ready..."
+            MYSQL_READY=false
+            for i in $(seq 1 12); do
+              if docker exec aidom-mysql mysqladmin ping -h localhost -u root -p${{ secrets.DB_ROOT_PASSWORD }} --silent 2>/dev/null; then
+                echo "MySQL is ready"
+                MYSQL_READY=true
+                break
+              fi
+              sleep 5
+            done
+
+            if [ "$MYSQL_READY" = false ]; then
+              echo "MySQL failed to start"
+              exit 1
             fi
 
             # MySQL 컨테이너가 네트워크에 연결되어 있는지 확인
