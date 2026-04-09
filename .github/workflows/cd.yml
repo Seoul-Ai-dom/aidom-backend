@@ -57,6 +57,9 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: REGISTRY,IMAGE_NAME,GITHUB_SHA
           script: |
+            # GHCR 로그인
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
             # Docker 네트워크 생성 (없으면)
             docker network create aidom-network 2>/dev/null || true
 
