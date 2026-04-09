@@ -28,8 +28,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build JAR
-        run: ./gradlew bootJar
+      - name: Build and test
+        run: ./gradlew build
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -53,16 +53,97 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: REGISTRY,IMAGE_NAME,GITHUB_SHA
           script: |
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            # Docker 네트워크 생성 (없으면)
+            docker network create aidom-network 2>/dev/null || true
+
+            # MySQL 컨테이너 관리
+            if ! docker ps -a --format '{{.Names}}' | grep -q '^aidom-mysql$'; then
+              # 컨테이너가 없으면 생성
+              docker run -d \
+                --name aidom-mysql \
+                --network aidom-network \
+                --restart unless-stopped \
+                -v mysql-data:/var/lib/mysql \
+                -e MYSQL_DATABASE=${{ secrets.DB_NAME }} \
+                -e MYSQL_USER=${{ secrets.DB_USERNAME }} \
+                -e MYSQL_PASSWORD=${{ secrets.DB_PASSWORD }} \
+                -e MYSQL_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }} \
+                mysql:8.0
+            elif ! docker ps --format '{{.Names}}' | grep -q '^aidom-mysql$'; then
+              # 컨테이너가 존재하지만 멈춰있으면 시작
+              docker start aidom-mysql
+            fi
+
+            # MySQL 준비 대기
+            echo "Waiting for MySQL to be ready..."
+            MYSQL_READY=false
+            for i in $(seq 1 12); do
+              if docker exec aidom-mysql mysqladmin ping -h localhost -u root -p${{ secrets.DB_ROOT_PASSWORD }} --silent 2>/dev/null; then
+                echo "MySQL is ready"
+                MYSQL_READY=true
+                break
+              fi
+              sleep 5
+            done
+
+            if [ "$MYSQL_READY" = false ]; then
+              echo "MySQL failed to start"
+              exit 1
+            fi
+
+            # MySQL 컨테이너가 네트워크에 연결되어 있는지 확인
+            docker network connect aidom-network aidom-mysql 2>/dev/null || true
+
+            # 앱 배포
+            NEW_IMAGE="${REGISTRY}/${IMAGE_NAME}:${GITHUB_SHA}"
+            docker pull $NEW_IMAGE
+
+            PREV_IMAGE=$(docker inspect aidom-backend --format='{{.Config.Image}}' 2>/dev/null || echo "")
+
             docker stop aidom-backend || true
             docker rm aidom-backend || true
+
             docker run -d \
               --name aidom-backend \
+              --network aidom-network \
               -p 8080:8080 \
               --restart unless-stopped \
               -e SPRING_PROFILES_ACTIVE=prod \
-              -e DB_URL=${{ secrets.DB_URL }} \
+              -e DB_URL=jdbc:mysql://aidom-mysql:3306/${{ secrets.DB_NAME }} \
               -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
               -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+              $NEW_IMAGE
+
+            # Health check: 최대 30초 대기, 5초 간격
+            OK=false
+            for i in $(seq 1 6); do
+              if curl -sf http://localhost:8080/actuator/health; then
+                OK=true
+                break
+              fi
+              sleep 5
+            done
+
+            if [ "$OK" = false ]; then
+              echo "Health check failed, rolling back..."
+              docker stop aidom-backend || true
+              docker rm aidom-backend || true
+              if [ -n "$PREV_IMAGE" ]; then
+                docker run -d \
+                  --name aidom-backend \
+                  --network aidom-network \
+                  -p 8080:8080 \
+                  --restart unless-stopped \
+                  -e SPRING_PROFILES_ACTIVE=prod \
+                  -e DB_URL=jdbc:mysql://aidom-mysql:3306/${{ secrets.DB_NAME }} \
+                  -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+                  -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+                  $PREV_IMAGE
+              fi
+              exit 1
+            fi
+
+            echo "Deploy succeeded: $NEW_IMAGE"
+            docker image prune -f
