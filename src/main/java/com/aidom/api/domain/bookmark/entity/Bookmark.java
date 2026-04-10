@@ -16,19 +16,17 @@ import lombok.NoArgsConstructor;
 @AttributeOverride(name = "id", column = @Column(name = "bookmark_id"))
 public class Bookmark extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "facility_id", nullable = false)
-    private Facility facility;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "facility_id", nullable = false)
+  private Facility facility;
 
-    @Builder
-    private Bookmark(User user, Facility facility) {
-        this.user = user;
-        this.facility = facility;
-    }
+  @Builder
+  private Bookmark(User user, Facility facility) {
+    this.user = user;
+    this.facility = facility;
+  }
 }
-
-
