@@ -1,3 +1,6 @@
+---
+applyTo: "**"
+---
 # Copilot All-in-One Instructions
 
 이 파일 하나로 GitHub Copilot이 다음을 우선 지키게 한다.
