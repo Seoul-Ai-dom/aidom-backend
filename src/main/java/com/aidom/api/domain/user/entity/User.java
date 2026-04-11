@@ -48,7 +48,7 @@ public class User extends BaseEntity {
   @Column(nullable = false)
   private Gender gender;
 
-  @Column(nullable = false, length = 100)
+  @Column(nullable = false)
   private LocalDate birthDate;
 
   @Column(nullable = false, length = 20)
