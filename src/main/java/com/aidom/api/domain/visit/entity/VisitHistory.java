@@ -10,13 +10,16 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Objects;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "visit_histories")
 @Getter
-@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AttributeOverride(name = "id", column = @Column(name = "visit_id"))
 public class VisitHistory extends BaseEntity {
 
@@ -40,9 +43,7 @@ public class VisitHistory extends BaseEntity {
   @Column(nullable = false)
   private VisitSource source;
 
-  /** 로직 확인 후 수정 예정 **/
-  @Column(nullable = false)
-  private LocalDate visitDate;
+  private LocalDate reservationDate;
 
   private LocalTime startTime;
 
@@ -51,4 +52,46 @@ public class VisitHistory extends BaseEntity {
   private LocalDateTime confirmedAt;
 
   private LocalDateTime cancelledAt;
+
+  @Builder
+  private VisitHistory(
+      User user,
+      Child child,
+      Facility facility,
+      VisitStatus status,
+      VisitSource source,
+      LocalDate reservationDate,
+      LocalTime startTime,
+      LocalTime endTime) {
+    this.user = user;
+    this.child = child;
+    this.facility = facility;
+    this.status = status;
+    this.source = source;
+    this.reservationDate = reservationDate;
+    this.startTime = startTime;
+    this.endTime = endTime;
+  }
+
+  public void confirm() {
+    this.status = VisitStatus.CONFIRMED;
+    this.confirmedAt = LocalDateTime.now();
+  }
+
+  public void cancel() {
+    this.status = VisitStatus.CANCELLED;
+    this.cancelledAt = LocalDateTime.now();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof VisitHistory that)) return false;
+    return getId() != null && getId().equals(that.getId());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(getId());
+  }
 }

@@ -34,11 +34,11 @@ public class FacilityExternalInfo {
   @Column(length = 20)
   private String businessStatus;
 
-  /** null이면 Facility.address로 fallback **/
+  /** null이면 Facility.address로 fallback * */
   @Column(length = 300)
   private String naverAddress;
 
-  /** null이면 Facility의 fee/monthly_fee로 fallback. **/
+  /** null이면 Facility의 fee/monthly_fee로 fallback. * */
   @Column(columnDefinition = "TEXT")
   private String feeText;
 
