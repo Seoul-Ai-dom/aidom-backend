@@ -56,11 +56,11 @@ public class FacilityStats {
       BigDecimal avgRatingKindness,
       int reviewCount) {
     this.facility = facility;
-    this.avgRating = avgRating;
-    this.avgRatingSafety = avgRatingSafety;
-    this.avgRatingCleanliness = avgRatingCleanliness;
-    this.avgRatingManagement = avgRatingManagement;
-    this.avgRatingKindness = avgRatingKindness;
+    this.avgRating = normalizeRating(avgRating);
+    this.avgRatingSafety = normalizeRating(avgRatingSafety);
+    this.avgRatingCleanliness = normalizeRating(avgRatingCleanliness);
+    this.avgRatingManagement = normalizeRating(avgRatingManagement);
+    this.avgRatingKindness = normalizeRating(avgRatingKindness);
     this.reviewCount = reviewCount;
     this.updatedAt = LocalDateTime.now();
   }
@@ -73,13 +73,18 @@ public class FacilityStats {
       BigDecimal avgRatingManagement,
       BigDecimal avgRatingKindness,
       int reviewCount) {
-    this.avgRating = avgRating.setScale(1, RoundingMode.HALF_UP);
-    this.avgRatingSafety = avgRatingSafety.setScale(1, RoundingMode.HALF_UP);
-    this.avgRatingCleanliness = avgRatingCleanliness.setScale(1, RoundingMode.HALF_UP);
-    this.avgRatingManagement = avgRatingManagement.setScale(1, RoundingMode.HALF_UP);
-    this.avgRatingKindness = avgRatingKindness.setScale(1, RoundingMode.HALF_UP);
+    this.avgRating = normalizeRating(avgRating);
+    this.avgRatingSafety = normalizeRating(avgRatingSafety);
+    this.avgRatingCleanliness = normalizeRating(avgRatingCleanliness);
+    this.avgRatingManagement = normalizeRating(avgRatingManagement);
+    this.avgRatingKindness = normalizeRating(avgRatingKindness);
     this.reviewCount = reviewCount;
     this.updatedAt = LocalDateTime.now();
+  }
+
+  private static BigDecimal normalizeRating(BigDecimal value) {
+    return Objects.requireNonNull(value, "rating must not be null")
+        .setScale(1, RoundingMode.HALF_UP);
   }
 
   @Override

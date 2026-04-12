@@ -43,6 +43,7 @@ public class VisitHistory extends BaseEntity {
   @Column(nullable = false)
   private VisitSource source;
 
+  @Column(name = "reservation_date")
   private LocalDate reservationDate;
 
   private LocalTime startTime;
