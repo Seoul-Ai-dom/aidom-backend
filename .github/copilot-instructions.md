@@ -1,6 +1,3 @@
----
-applyTo: "**"
----
 # Copilot All-in-One Instructions
 
 이 파일 하나로 GitHub Copilot이 다음을 우선 지키게 한다.
@@ -10,21 +7,12 @@ applyTo: "**"
 - 한국어 PR 메시지 작성
 - 한국어 리뷰 코멘트 작성
 
-## 프로젝트 개요
-- 베이스 패키지: `com.aidom.api`
-- Spring Boot 3.4 + Java 17 + Gradle
-- DB: MySQL (운영), H2 (테스트)
-- ORM: Spring Data JPA + JPA Auditing
-- API 문서: SpringDoc OpenAPI (Swagger)
-- 코드 포맷: Spotless + Google Java Format
-- 테스트: JUnit 5 + RestAssured
-- 유효성 검증: Spring Validation (`jakarta.validation`)
-- 에러 응답: RFC 7807 ProblemDetail
-
 ## 기본 전제
+- 이 저장소는 Spring Boot 3 + Java 17 기반 백엔드다.
 - 최우선 기준은 가독성, 책임 분리, 일관성이다.
 - 기존 네이밍, 포맷, 폴더 구조 컨벤션을 우선 준수한다.
-- 답변, 리뷰, PR 메시지는 반드시 한국어로 작성한다.
+- 답변, 리뷰, PR 메시지는 기본적으로 한국어로 작성한다.
+- 코드 포맷팅은 Spotless + Google Java Format을 따른다.
 
 ## 아키텍처 핵심 규칙
 - Layered Architecture를 지킨다.
@@ -82,12 +70,6 @@ applyTo: "**"
 ## 어노테이션
 - 길이가 짧은 순서대로 위에서부터 배치 (피라미드)
 
-## Import 규칙
-- Spotless가 자동 정렬하므로 수동 정렬 불필요
-- import 순서: `java` → `javax` → `jakarta` → `org` → `com` → 나머지
-- 사용하지 않는 import는 제거한다
-- 와일드카드 import(`*`)는 사용하지 않는다
-
 ## Java / Spring Boot 규칙
 - DTO는 record를 사용한다.
 - 엔티티는 @Getter + @NoArgsConstructor(access = PROTECTED) + 정적 팩토리 메서드 패턴을 사용한다.
@@ -100,36 +82,20 @@ applyTo: "**"
 - id는 null 의미를 추가하기 위해 Long 타입을 사용한다.
 - Controller에서는 ResponseEntity를 사용하여 상태코드를 메서드 안에서 명시한다.
 
-## Entity 규칙
-- 모든 엔티티는 `BaseEntity`를 상속한다. BaseEntity가 id(Long, IDENTITY), createdAt, updatedAt을 제공한다.
+## Domain 규칙
 - equals & hashCode를 재정의한다. equals는 id만 비교하며 instanceof로 구현한다.
 - 생성자에서 null 검사와 규칙 검사를 실시한다.
-- 엔티티 생성은 정적 팩토리 메서드(from/of)를 사용한다. 외부에서 new로 직접 생성하지 않는다.
-- 상태 변경은 의미 있는 도메인 메서드명으로 한다 (예: `activate()`, `changeNickname()`). setXXX 금지.
 
 ## DTO 규칙
-- DTO는 record 문법을 사용한다.
 - DTO는 Controller → Service까지 전달되며, 변환은 Service에서 처리한다.
 - DTO 관련 정적 팩토리 메서드를 DTO 내부에서 활용한다 (from, of).
-- Request DTO 유효성 검사는 `jakarta.validation` 어노테이션(@NotBlank, @NotNull, @Min 등)으로 null/형식 검사만 한다. 도메인 규칙은 도메인 안에서 검사한다.
+- Request DTO 유효성 검사는 null 검사만 한다. 도메인 규칙은 도메인 안에서 검사한다.
+- DTO는 record 문법을 사용한다.
 
 ## 예외 처리
-- 예외 응답은 RFC 7807 ProblemDetail 형식을 사용한다.
-- Custom 예외는 `CustomException`을 던지고 `ErrorCode` enum으로 분류한다.
-- ErrorCode는 카테고리별로 그룹핑한다 (Common: C0xx, Auth: A0xx, Validation: V0xx 등).
-- 새 도메인 추가 시 해당 도메인의 ErrorCode 그룹을 새로 정의한다.
-- `GlobalExceptionHandler`가 모든 예외를 ProblemDetail로 변환한다.
+- Custom 예외를 ErrorCode enum 기반으로 사용한다.
+- 응답 형식: `{ "type": "/요청/uri", "title": "에러 제목", "status": 400, "detail": "에러 상세 메시지" }`
 - 500 에러 핸들러에서는 반드시 원본 예외를 로깅한다.
-- 커스텀 예외 사용법:
-  ```java
-  throw new CustomException(ErrorCode.ENTITY_NOT_FOUND);
-  ```
-
-## 프로필(Profile) 규칙
-- `local`: 로컬 개발 환경 (Docker Compose로 MySQL 연결)
-- `test`: 테스트 환경 (H2 인메모리 DB)
-- `prod`: 운영 환경
-- 테스트용 컨트롤러/빈은 `@Profile({"local", "test"})`로 제한한다.
 
 ## 테스트 규칙
 
@@ -151,14 +117,7 @@ applyTo: "**"
 - BDD 스타일 (Given / When / Then).
 
 ## API 문서화
-- Swagger(SpringDoc OpenAPI)를 사용한다.
-- Controller 메서드에 `@Operation(summary = "...")` 등으로 API 설명을 추가한다.
-
-## 보안 규칙
-- 사용자 입력은 항상 검증한다 (@Valid, @Validated).
-- SQL Injection 방지: JPQL 파라미터 바인딩을 사용하고, 문자열 연결로 쿼리를 만들지 않는다.
-- 민감 정보(비밀번호, 토큰, 개인정보)를 로그에 남기지 않는다.
-- 환경 변수와 시크릿은 application.properties 또는 환경변수로 관리하고, 코드에 하드코딩하지 않는다.
+- Swagger를 사용한다.
 
 ## Git 컨벤션
 
@@ -190,9 +149,6 @@ applyTo: "**"
 10. 메서드 작성 순서(RCUD), 접근제어자 순서, 어노테이션 순서가 맞는가
 11. @Transactional(readOnly = true) 기본 적용, 변경 메서드만 @Transactional인가
 12. 생성자 주입(@RequiredArgsConstructor)을 사용하는가
-13. 엔티티가 BaseEntity를 상속하는가
-14. 예외 처리 시 CustomException + ErrorCode를 사용하는가
-15. 와일드카드 import를 사용하지 않는가
 
 ## PR 리뷰 작성 규칙
 - 반드시 한국어로 작성한다.
