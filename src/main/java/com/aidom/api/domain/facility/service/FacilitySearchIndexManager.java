@@ -54,9 +54,7 @@ public class FacilitySearchIndexManager implements ApplicationRunner {
 
   public void rebuildIndex(List<FacilityDocument> documents) {
     String newIndexName =
-        FACILITY_PRIMARY_INDEX
-            + "-"
-            + LocalDateTime.now(clock).format(REINDEX_SUFFIX_FORMATTER);
+        FACILITY_PRIMARY_INDEX + "-" + LocalDateTime.now(clock).format(REINDEX_SUFFIX_FORMATTER);
 
     ensureIndexExists(newIndexName);
 

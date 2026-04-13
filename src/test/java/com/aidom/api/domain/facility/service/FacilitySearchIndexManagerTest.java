@@ -3,7 +3,6 @@ package com.aidom.api.domain.facility.service;
 import static com.aidom.api.global.config.ElasticsearchIndexConstants.FACILITY_INDEX_ALIAS;
 import static com.aidom.api.global.config.ElasticsearchIndexConstants.FACILITY_PRIMARY_INDEX;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,8 +47,10 @@ class FacilitySearchIndexManagerTest {
     FacilitySearchIndexManager manager = new FacilitySearchIndexManager(operations, FIXED_CLOCK);
 
     when(operations.indexOps(FacilityDocument.class)).thenReturn(classIndexOperations);
-    when(operations.indexOps(IndexCoordinates.of(FACILITY_INDEX_ALIAS))).thenReturn(aliasIndexOperations);
-    when(operations.indexOps(IndexCoordinates.of(FACILITY_PRIMARY_INDEX))).thenReturn(primaryIndexOperations);
+    when(operations.indexOps(IndexCoordinates.of(FACILITY_INDEX_ALIAS)))
+        .thenReturn(aliasIndexOperations);
+    when(operations.indexOps(IndexCoordinates.of(FACILITY_PRIMARY_INDEX)))
+        .thenReturn(primaryIndexOperations);
     when(aliasIndexOperations.getAliases(FACILITY_INDEX_ALIAS)).thenReturn(Map.of());
     when(primaryIndexOperations.exists()).thenReturn(false);
     when(classIndexOperations.createSettings()).thenReturn(settings);
@@ -65,13 +66,17 @@ class FacilitySearchIndexManagerTest {
   @DisplayName("재색인 시 새 인덱스로 alias를 교체하고 이전 인덱스를 삭제한다")
   void rebuildIndex_swapsAliasAndDeletesOldIndices() {
     FacilitySearchIndexManager manager = new FacilitySearchIndexManager(operations, FIXED_CLOCK);
-    FacilityDocument document = FacilityDocument.builder().id("FAC001").facilityName("강남 키움센터").build();
+    FacilityDocument document =
+        FacilityDocument.builder().id("FAC001").facilityName("강남 키움센터").build();
     String rebuiltIndexName = FACILITY_PRIMARY_INDEX + "-20260414090000";
 
     when(operations.indexOps(FacilityDocument.class)).thenReturn(classIndexOperations);
-    when(operations.indexOps(IndexCoordinates.of(FACILITY_PRIMARY_INDEX))).thenReturn(primaryIndexOperations);
-    when(operations.indexOps(IndexCoordinates.of(rebuiltIndexName))).thenReturn(rebuiltIndexOperations);
-    when(operations.indexOps(IndexCoordinates.of(FACILITY_INDEX_ALIAS))).thenReturn(aliasIndexOperations);
+    when(operations.indexOps(IndexCoordinates.of(FACILITY_PRIMARY_INDEX)))
+        .thenReturn(primaryIndexOperations);
+    when(operations.indexOps(IndexCoordinates.of(rebuiltIndexName)))
+        .thenReturn(rebuiltIndexOperations);
+    when(operations.indexOps(IndexCoordinates.of(FACILITY_INDEX_ALIAS)))
+        .thenReturn(aliasIndexOperations);
     when(rebuiltIndexOperations.exists()).thenReturn(false);
     when(classIndexOperations.createSettings()).thenReturn(settings);
     when(classIndexOperations.createMapping()).thenReturn(mapping);
@@ -95,8 +100,10 @@ class FacilitySearchIndexManagerTest {
   void initializeIndex_skipsAliasCreationWhenAliasExists() {
     FacilitySearchIndexManager manager = new FacilitySearchIndexManager(operations, FIXED_CLOCK);
 
-    when(operations.indexOps(IndexCoordinates.of(FACILITY_INDEX_ALIAS))).thenReturn(aliasIndexOperations);
-    when(operations.indexOps(IndexCoordinates.of(FACILITY_PRIMARY_INDEX))).thenReturn(primaryIndexOperations);
+    when(operations.indexOps(IndexCoordinates.of(FACILITY_INDEX_ALIAS)))
+        .thenReturn(aliasIndexOperations);
+    when(operations.indexOps(IndexCoordinates.of(FACILITY_PRIMARY_INDEX)))
+        .thenReturn(primaryIndexOperations);
     when(aliasIndexOperations.getAliases(FACILITY_INDEX_ALIAS))
         .thenReturn(
             Map.of(

@@ -1,8 +1,7 @@
 package com.aidom.api.domain.facility.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import static com.aidom.api.global.config.ElasticsearchIndexConstants.FACILITY_INDEX_ALIAS;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.aidom.api.domain.facility.document.FacilityDocument;
 import java.util.List;
@@ -119,7 +118,9 @@ class FacilitySearchRepositoryIntegrationTest {
   void startup_createsAliasBackedIndex() {
     Map<String, Set<org.springframework.data.elasticsearch.core.index.AliasData>> aliases =
         elasticsearchOperations
-            .indexOps(org.springframework.data.elasticsearch.core.mapping.IndexCoordinates.of(FACILITY_INDEX_ALIAS))
+            .indexOps(
+                org.springframework.data.elasticsearch.core.mapping.IndexCoordinates.of(
+                    FACILITY_INDEX_ALIAS))
             .getAliases(FACILITY_INDEX_ALIAS);
 
     assertThat(aliases).isNotEmpty();

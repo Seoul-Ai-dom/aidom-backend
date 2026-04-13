@@ -1,8 +1,7 @@
 package com.aidom.api.domain.facility.document;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import static com.aidom.api.global.config.ElasticsearchIndexConstants.FACILITY_INDEX_ALIAS;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Field;
 import org.junit.jupiter.api.DisplayName;
