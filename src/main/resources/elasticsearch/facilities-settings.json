@@ -1,0 +1,14 @@
+{
+  "analysis": {
+    "analyzer": {
+      "facility_nori": {
+        "type": "custom",
+        "tokenizer": "nori_tokenizer",
+        "filter": ["lowercase"]
+      }
+    }
+  },
+  "number_of_shards": 1,
+  "number_of_replicas": 1,
+  "refresh_interval": "1s"
+}
