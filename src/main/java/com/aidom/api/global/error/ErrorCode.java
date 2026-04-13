@@ -24,6 +24,8 @@ public enum ErrorCode {
   INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A002", "유효하지 않은 토큰입니다."),
   EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A003", "만료된 토큰입니다."),
   ACCESS_DENIED(HttpStatus.FORBIDDEN, "A004", "해당 리소스에 접근할 권한이 없습니다."),
+  SOCIAL_PROVIDER_MISMATCH(HttpStatus.CONFLICT, "A005", "이미 다른 소셜 계정으로 가입된 이메일입니다."),
+  OAUTH2_EMAIL_NOT_PROVIDED(HttpStatus.BAD_REQUEST, "A006", "소셜 로그인 제공자에서 이메일 정보를 제공하지 않았습니다."),
 
   // Validation
   DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "V001", "이미 존재하는 데이터입니다."),

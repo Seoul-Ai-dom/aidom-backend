@@ -16,24 +16,31 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
 
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    uniqueConstraints = {
+      @UniqueConstraint(name = "uk_user_email", columnNames = "email"),
+      @UniqueConstraint(
+          name = "uk_user_provider_provider_id",
+          columnNames = {"provider", "provider_id"})
+    })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AttributeOverride(name = "id", column = @Column(name = "user_id"))
 @SQLRestriction("deleted_at IS NULL")
 public class User extends BaseEntity {
 
-  @Column(nullable = false, length = 50)
+  @Column(length = 50)
   private String name;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 100)
   private String email;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private Provider provider;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 100)
   private String providerId;
 
   @Enumerated(EnumType.STRING)
@@ -45,16 +52,15 @@ public class User extends BaseEntity {
   private UserStatus status;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column
   private Gender gender;
 
-  @Column(nullable = false)
-  private LocalDate birthDate;
+  @Column private LocalDate birthDate;
 
-  @Column(nullable = false, length = 20)
+  @Column(length = 20)
   private String phone;
 
-  @Column(nullable = false, length = 50)
+  @Column(length = 50)
   private String district;
 
   @Column(length = 200)
@@ -96,5 +102,40 @@ public class User extends BaseEntity {
     this.addressDetail = addressDetail;
     this.addressLat = addressLat;
     this.addressLng = addressLng;
+  }
+
+  public static User createSocialUser(
+      String email,
+      String name,
+      Provider provider,
+      String providerId,
+      Role role,
+      UserStatus status) {
+    return User.builder()
+        .email(email)
+        .name(name)
+        .provider(provider)
+        .providerId(providerId)
+        .role(role)
+        .status(status)
+        .build();
+  }
+
+  public void updateOAuthProfile(String email, String name, String providerId) {
+    this.email = email;
+    if (name != null && !name.isBlank()) {
+      this.name = name;
+    }
+    this.providerId = providerId;
+  }
+
+  public boolean requiresOnboarding() {
+    return status == UserStatus.ONBOARDING
+        || gender == null
+        || birthDate == null
+        || phone == null
+        || phone.isBlank()
+        || district == null
+        || district.isBlank();
   }
 }

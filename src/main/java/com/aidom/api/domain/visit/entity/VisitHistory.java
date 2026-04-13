@@ -40,7 +40,7 @@ public class VisitHistory extends BaseEntity {
   @Column(nullable = false)
   private VisitSource source;
 
-  /** 로직 확인 후 수정 예정 **/
+  /** 로직 확인 후 수정 예정 * */
   @Column(nullable = false)
   private LocalDate visitDate;
 
