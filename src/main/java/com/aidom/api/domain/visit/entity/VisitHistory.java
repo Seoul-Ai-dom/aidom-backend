@@ -43,7 +43,7 @@ public class VisitHistory extends BaseEntity {
   @Column(nullable = false)
   private VisitSource source;
 
-  @Column(name = "reservation_date")
+  @Column(name = "reservation_date", nullable = false)
   private LocalDate reservationDate;
 
   private LocalTime startTime;

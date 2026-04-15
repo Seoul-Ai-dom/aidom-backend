@@ -1,6 +1,7 @@
 package com.aidom.api.domain.facility.service;
 
 import static com.aidom.api.global.config.ElasticsearchIndexConstants.FACILITY_INDEX_ALIAS;
+import static com.aidom.api.global.config.ElasticsearchIndexConstants.FACILITY_INDEX_PREFIX;
 import static com.aidom.api.global.config.ElasticsearchIndexConstants.FACILITY_PRIMARY_INDEX;
 
 import com.aidom.api.domain.facility.document.FacilityDocument;
@@ -30,7 +31,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(
     name = "spring.data.elasticsearch.repositories.enabled",
     havingValue = "true",
-    matchIfMissing = true)
+    matchIfMissing = false)
 public class FacilitySearchIndexManager implements ApplicationRunner {
 
   private static final DateTimeFormatter REINDEX_SUFFIX_FORMATTER =
@@ -132,7 +133,9 @@ public class FacilitySearchIndexManager implements ApplicationRunner {
 
   private void deleteIndices(Set<String> indexNames) {
     for (String indexName : indexNames) {
-      operations.indexOps(IndexCoordinates.of(indexName)).delete();
+      if (indexName.startsWith(FACILITY_INDEX_PREFIX)) {
+        operations.indexOps(IndexCoordinates.of(indexName)).delete();
+      }
     }
   }
 }

@@ -111,6 +111,7 @@ class FacilitySearchRepositoryIntegrationTest {
                 .build());
 
     facilitySearchRepository.saveAll(docs);
+    elasticsearchOperations.indexOps(FacilityDocument.class).refresh();
   }
 
   @Test

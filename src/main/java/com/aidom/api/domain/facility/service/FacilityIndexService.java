@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(
     name = "spring.data.elasticsearch.repositories.enabled",
     havingValue = "true",
-    matchIfMissing = true)
+    matchIfMissing = false)
 public class FacilityIndexService {
 
   private final FacilitySearchRepository facilitySearchRepository;
