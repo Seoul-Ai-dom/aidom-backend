@@ -28,7 +28,19 @@ public enum ErrorCode {
   // Validation
   DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "V001", "이미 존재하는 데이터입니다."),
   BUSINESS_VALIDATION_ERROR(
-      HttpStatus.UNPROCESSABLE_ENTITY, "V002", "비즈니스 규칙 위반 또는 처리할 수 없는 요청입니다.");
+      HttpStatus.UNPROCESSABLE_ENTITY, "V002", "비즈니스 규칙 위반 또는 처리할 수 없는 요청입니다."),
+
+  // Facility
+  FACILITY_NOT_FOUND(HttpStatus.NOT_FOUND, "F001", "시설을 찾을 수 없습니다."),
+
+  // Bookmark
+  ALREADY_BOOKMARKED(HttpStatus.CONFLICT, "B001", "이미 찜한 시설입니다."),
+  BOOKMARK_NOT_FOUND(HttpStatus.NOT_FOUND, "B002", "찜 내역을 찾을 수 없습니다."),
+
+  // Visit
+  VISIT_NOT_FOUND(HttpStatus.NOT_FOUND, "T001", "이용 내역을 찾을 수 없습니다."),
+  VISIT_ALREADY_CANCELLED(HttpStatus.UNPROCESSABLE_ENTITY, "T002", "이미 취소된 이용 내역입니다."),
+  VISIT_ALREADY_CONFIRMED(HttpStatus.UNPROCESSABLE_ENTITY, "T003", "이미 확정된 이용 내역입니다.");
 
   private final HttpStatus httpStatus;
   private final String code;
