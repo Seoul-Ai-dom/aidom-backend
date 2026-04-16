@@ -12,12 +12,12 @@ public record PageResponse<T>(
     @Schema(description = "전체 요소 수", example = "100") long totalElements,
     @Schema(description = "전체 페이지 수", example = "5") int totalPages) {
 
-  public static <T> PageResponse<T> from(Page<T> page) {
+  public static <T> PageResponse<T> from(Page<T> pageResult) {
     return new PageResponse<>(
-        page.getContent(),
-        page.getNumber(),
-        page.getSize(),
-        page.getTotalElements(),
-        page.getTotalPages());
+        pageResult.getContent(),
+        pageResult.getNumber(),
+        pageResult.getSize(),
+        pageResult.getTotalElements(),
+        pageResult.getTotalPages());
   }
 }
