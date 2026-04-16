@@ -43,8 +43,8 @@ public class VisitHistory extends BaseEntity {
   @Column(nullable = false)
   private VisitSource source;
 
-  @Column(name = "reservation_date", nullable = false)
-  private LocalDate reservationDate;
+  @Column(name = "visit_date")
+  private LocalDate visitDate;
 
   private LocalTime startTime;
 
@@ -61,7 +61,7 @@ public class VisitHistory extends BaseEntity {
       Facility facility,
       VisitStatus status,
       VisitSource source,
-      LocalDate reservationDate,
+      LocalDate visitDate,
       LocalTime startTime,
       LocalTime endTime) {
     this.user = user;
@@ -69,17 +69,29 @@ public class VisitHistory extends BaseEntity {
     this.facility = facility;
     this.status = status;
     this.source = source;
-    this.reservationDate = reservationDate;
+    this.visitDate = visitDate;
     this.startTime = startTime;
     this.endTime = endTime;
   }
 
-  public void confirm() {
+  public void confirm(LocalDate visitDate, LocalTime startTime, LocalTime endTime) {
+    if (this.status == VisitStatus.CONFIRMED) {
+      throw new IllegalStateException("이미 확정된 이용 내역입니다.");
+    }
+    if (this.status == VisitStatus.CANCELLED) {
+      throw new IllegalStateException("취소된 이용 내역은 확정할 수 없습니다.");
+    }
     this.status = VisitStatus.CONFIRMED;
+    this.visitDate = visitDate;
+    this.startTime = startTime;
+    this.endTime = endTime;
     this.confirmedAt = LocalDateTime.now();
   }
 
   public void cancel() {
+    if (this.status == VisitStatus.CANCELLED) {
+      throw new IllegalStateException("이미 취소된 이용 내역입니다.");
+    }
     this.status = VisitStatus.CANCELLED;
     this.cancelledAt = LocalDateTime.now();
   }
