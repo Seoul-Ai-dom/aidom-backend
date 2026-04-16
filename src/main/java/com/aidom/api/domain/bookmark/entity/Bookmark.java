@@ -1,5 +1,6 @@
 package com.aidom.api.domain.bookmark.entity;
 
+import com.aidom.api.domain.bookmark.enums.BookmarkStatus;
 import com.aidom.api.domain.facility.entity.Facility;
 import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.global.common.entity.BaseEntity;
@@ -29,13 +30,30 @@ public class Bookmark extends BaseEntity {
   @JoinColumn(name = "facility_id", nullable = false)
   private Facility facility;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private BookmarkStatus status;
+
   private Bookmark(User user, Facility facility) {
     this.user = user;
     this.facility = facility;
+    this.status = BookmarkStatus.ACTIVE;
   }
 
   public static Bookmark of(User user, Facility facility) {
     return new Bookmark(user, facility);
+  }
+
+  public void cancel() {
+    this.status = BookmarkStatus.CANCELLED;
+  }
+
+  public void reactivate() {
+    this.status = BookmarkStatus.ACTIVE;
+  }
+
+  public boolean isActive() {
+    return this.status == BookmarkStatus.ACTIVE;
   }
 
   @Override
