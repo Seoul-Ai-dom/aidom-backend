@@ -38,3 +38,8 @@ out/
 
 ### Application Secrets ###
 .env
+
+### Screenshots ###
+*.png
+*.jpg
+*.jpeg
