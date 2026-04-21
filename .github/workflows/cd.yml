@@ -51,12 +51,17 @@ jobs:
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          ES_URL: ${{ secrets.ES_URL }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           command_timeout: 30m
-          envs: REGISTRY,IMAGE_NAME,GITHUB_SHA
+          envs: REGISTRY,IMAGE_NAME,GITHUB_SHA,DB_URL,DB_USERNAME,DB_PASSWORD,ES_URL
           script: |
             # GHCR 로그인
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -75,9 +80,10 @@ jobs:
               -p 8080:8080 \
               --restart unless-stopped \
               -e SPRING_PROFILES_ACTIVE=prod \
-              -e 'DB_URL=${{ secrets.DB_URL }}' \
-              -e 'DB_USERNAME=${{ secrets.DB_USERNAME }}' \
-              -e 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' \
+              -e DB_URL \
+              -e DB_USERNAME \
+              -e DB_PASSWORD \
+              -e ES_URL \
               $NEW_IMAGE
 
             # Health check: 최대 30초 대기, 5초 간격
@@ -100,9 +106,10 @@ jobs:
                   -p 8080:8080 \
                   --restart unless-stopped \
                   -e SPRING_PROFILES_ACTIVE=prod \
-                  -e 'DB_URL=${{ secrets.DB_URL }}' \
-                  -e 'DB_USERNAME=${{ secrets.DB_USERNAME }}' \
-                  -e 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' \
+                  -e DB_URL \
+                  -e DB_USERNAME \
+                  -e DB_PASSWORD \
+                  -e ES_URL \
                   $PREV_IMAGE
               fi
               exit 1
