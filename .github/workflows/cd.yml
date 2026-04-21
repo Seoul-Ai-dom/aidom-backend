@@ -66,14 +66,43 @@ jobs:
             # GHCR 로그인
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 앱 배포
+            # 앱 배포 (blue-green: 새 컨테이너 먼저 검증 후 교체)
             NEW_IMAGE="${REGISTRY}/${IMAGE_NAME}:${GITHUB_SHA}"
             docker pull $NEW_IMAGE
 
-            PREV_IMAGE=$(docker inspect aidom-backend --format='{{.Config.Image}}' 2>/dev/null || echo "")
+            # 새 컨테이너를 임시 포트(8081)로 띄워서 health check
+            docker rm -f aidom-backend-new 2>/dev/null || true
+            docker run -d \
+              --name aidom-backend-new \
+              -p 8081:8080 \
+              -e SPRING_PROFILES_ACTIVE=prod \
+              -e DB_URL \
+              -e DB_USERNAME \
+              -e DB_PASSWORD \
+              -e ES_URL \
+              $NEW_IMAGE
 
-            docker stop aidom-backend || true
-            docker rm aidom-backend || true
+            # Health check: 최대 60초 대기, 5초 간격
+            OK=false
+            for i in $(seq 1 12); do
+              if curl -sf http://localhost:8081/actuator/health; then
+                OK=true
+                break
+              fi
+              sleep 5
+            done
+
+            if [ "$OK" = false ]; then
+              echo "Health check failed. Container logs:"
+              docker logs --tail 50 aidom-backend-new
+              docker rm -f aidom-backend-new || true
+              echo "기존 컨테이너 유지, 배포 실패"
+              exit 1
+            fi
+
+            # 새 컨테이너 검증 성공 → 기존 컨테이너 교체
+            docker rm -f aidom-backend-new
+            docker stop aidom-backend 2>/dev/null && docker rename aidom-backend aidom-backend-old || true
 
             docker run -d \
               --name aidom-backend \
@@ -86,34 +115,26 @@ jobs:
               -e ES_URL \
               $NEW_IMAGE
 
-            # Health check: 최대 30초 대기, 5초 간격
-            OK=false
-            for i in $(seq 1 6); do
+            # 최종 컨테이너(8080) health check
+            FINAL_OK=false
+            for i in $(seq 1 12); do
               if curl -sf http://localhost:8080/actuator/health; then
-                OK=true
+                FINAL_OK=true
                 break
               fi
               sleep 5
             done
 
-            if [ "$OK" = false ]; then
-              echo "Health check failed, rolling back..."
-              docker stop aidom-backend || true
-              docker rm aidom-backend || true
-              if [ -n "$PREV_IMAGE" ]; then
-                docker run -d \
-                  --name aidom-backend \
-                  -p 8080:8080 \
-                  --restart unless-stopped \
-                  -e SPRING_PROFILES_ACTIVE=prod \
-                  -e DB_URL \
-                  -e DB_USERNAME \
-                  -e DB_PASSWORD \
-                  -e ES_URL \
-                  $PREV_IMAGE
-              fi
+            if [ "$FINAL_OK" = false ]; then
+              echo "Final health check failed. Rolling back..."
+              docker logs --tail 50 aidom-backend
+              docker rm -f aidom-backend || true
+              docker rename aidom-backend-old aidom-backend
+              docker start aidom-backend
               exit 1
             fi
 
+            # 배포 성공, 이전 컨테이너 정리
+            docker rm -f aidom-backend-old 2>/dev/null || true
             echo "Deploy succeeded: $NEW_IMAGE"
             docker image prune -f
