@@ -33,6 +33,9 @@ public enum ErrorCode {
   // Facility
   FACILITY_NOT_FOUND(HttpStatus.NOT_FOUND, "F001", "시설을 찾을 수 없습니다."),
 
+  // Child
+  CHILD_NOT_FOUND(HttpStatus.NOT_FOUND, "CH001", "아이 정보를 찾을 수 없습니다."),
+
   // Bookmark
   ALREADY_BOOKMARKED(HttpStatus.CONFLICT, "B001", "이미 찜한 시설입니다."),
   BOOKMARK_NOT_FOUND(HttpStatus.NOT_FOUND, "B002", "찜 내역을 찾을 수 없습니다."),
