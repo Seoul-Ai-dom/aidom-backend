@@ -14,6 +14,7 @@ import com.aidom.api.domain.facility.dto.FacilityListResponse;
 import com.aidom.api.domain.facility.dto.FacilityRecommendResponse;
 import com.aidom.api.domain.facility.dto.FacilitySearchResponse;
 import com.aidom.api.domain.facility.service.FacilityService;
+import com.aidom.api.global.config.SecurityConfig;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +33,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(FacilityController.class)
+@Import(SecurityConfig.class)
 @ActiveProfiles("test")
 @TestPropertySource(properties = "spring.data.elasticsearch.repositories.enabled=true")
 class FacilityControllerTest {
