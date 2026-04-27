@@ -21,6 +21,7 @@ public class SwaggerConfig {
         .tags(
             List.of(
                 new Tag().name("시설 Facilities").description("시설 조회·검색·추천·필터 API"),
+                new Tag().name("시설 관리 Admin").description("시설 데이터 관리 API"),
                 new Tag().name("찜 Bookmarks").description("시설 찜(북마크) API"),
                 new Tag().name("이용내역 Visits").description("시설 이용내역 관리 API")));
   }
