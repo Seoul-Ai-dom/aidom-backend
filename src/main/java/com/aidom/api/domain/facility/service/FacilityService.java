@@ -1,7 +1,11 @@
 package com.aidom.api.domain.facility.service;
 
 import com.aidom.api.domain.facility.document.FacilityDocument;
-import com.aidom.api.domain.facility.dto.*;
+import com.aidom.api.domain.facility.dto.FacilityDetailResponse;
+import com.aidom.api.domain.facility.dto.FacilityFilterResponse;
+import com.aidom.api.domain.facility.dto.FacilityListResponse;
+import com.aidom.api.domain.facility.dto.FacilityRecommendResponse;
+import com.aidom.api.domain.facility.dto.FacilitySearchResponse;
 import com.aidom.api.domain.facility.entity.Facility;
 import com.aidom.api.domain.facility.entity.FacilityExternalInfo;
 import com.aidom.api.domain.facility.entity.FacilityStats;
@@ -9,7 +13,7 @@ import com.aidom.api.domain.facility.enums.ServiceType;
 import com.aidom.api.domain.facility.repository.FacilityRepository;
 import com.aidom.api.domain.facility.repository.FacilitySearchRepository;
 import com.aidom.api.domain.user.entity.Child;
-import com.aidom.api.domain.user.repository.ChildRepository;
+import com.aidom.api.domain.user.service.ChildService;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
 import java.math.BigDecimal;
@@ -35,7 +39,7 @@ public class FacilityService {
 
   private final FacilitySearchRepository facilitySearchRepository;
   private final FacilityRepository facilityRepository;
-  private final ChildRepository childRepository;
+  private final ChildService childService;
 
   public Page<FacilityListResponse> listFacilities(
       String districtName,
@@ -85,10 +89,7 @@ public class FacilityService {
   public List<FacilityRecommendResponse> recommendFacilities(
       Long childId, BigDecimal lat, BigDecimal lng, int limit) {
 
-    Child child =
-        childRepository
-            .findById(childId)
-            .orElseThrow(() -> new CustomException(ErrorCode.CHILD_NOT_FOUND));
+    Child child = childService.getChildById(childId);
 
     int childAge = calculateAge(child.getBirthDate());
 
@@ -133,7 +134,7 @@ public class FacilityService {
             new FacilityFilterResponse.FilterOption("3~5세", "3-5"),
             new FacilityFilterResponse.FilterOption("6~9세", "6-9"),
             new FacilityFilterResponse.FilterOption("10~12세", "10-12"),
-            new FacilityFilterResponse.FilterOption("13세 이상", "13-18"));
+            new FacilityFilterResponse.FilterOption("13~18세", "13-18"));
 
     List<FacilityFilterResponse.FilterOption> careTypes =
         List.of(

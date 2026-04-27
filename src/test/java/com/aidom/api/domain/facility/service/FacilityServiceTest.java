@@ -2,17 +2,23 @@ package com.aidom.api.domain.facility.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 
 import com.aidom.api.domain.facility.document.FacilityDocument;
-import com.aidom.api.domain.facility.dto.*;
+import com.aidom.api.domain.facility.dto.FacilityDetailResponse;
+import com.aidom.api.domain.facility.dto.FacilityFilterResponse;
+import com.aidom.api.domain.facility.dto.FacilityListResponse;
+import com.aidom.api.domain.facility.dto.FacilityRecommendResponse;
+import com.aidom.api.domain.facility.dto.FacilitySearchResponse;
 import com.aidom.api.domain.facility.entity.Facility;
 import com.aidom.api.domain.facility.enums.ServiceType;
 import com.aidom.api.domain.facility.repository.FacilityRepository;
 import com.aidom.api.domain.facility.repository.FacilitySearchRepository;
 import com.aidom.api.domain.user.entity.Child;
-import com.aidom.api.domain.user.repository.ChildRepository;
+import com.aidom.api.domain.user.service.ChildService;
 import com.aidom.api.global.common.entity.Gender;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
@@ -37,7 +43,7 @@ class FacilityServiceTest {
 
   @Mock private FacilitySearchRepository facilitySearchRepository;
   @Mock private FacilityRepository facilityRepository;
-  @Mock private ChildRepository childRepository;
+  @Mock private ChildService childService;
 
   @InjectMocks private FacilityService facilityService;
 
@@ -117,7 +123,7 @@ class FacilityServiceTest {
             .birthDate(LocalDate.now().minusYears(7))
             .gender(Gender.MALE)
             .build();
-    given(childRepository.findById(1L)).willReturn(Optional.of(child));
+    given(childService.getChildById(1L)).willReturn(child);
 
     FacilityDocument doc = createDocument("FAC001", "강남 키움센터");
     given(facilitySearchRepository.recommendByChildAge(eq(7), isNull(), isNull(), eq(5)))
@@ -133,7 +139,8 @@ class FacilityServiceTest {
   @Test
   @DisplayName("존재하지 않는 아이 ID로 추천 요청 시 CHILD_NOT_FOUND 예외 발생")
   void recommendFacilities_childNotFound() {
-    given(childRepository.findById(999L)).willReturn(Optional.empty());
+    given(childService.getChildById(999L))
+        .willThrow(new CustomException(ErrorCode.CHILD_NOT_FOUND));
 
     assertThatThrownBy(() -> facilityService.recommendFacilities(999L, null, null, 5))
         .isInstanceOf(CustomException.class)

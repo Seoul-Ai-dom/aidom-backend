@@ -293,12 +293,13 @@ class FacilitySearchRepositoryIntegrationTest {
   @Test
   @DisplayName("searchNearby - 좁은 반경에서는 가까운 시설만 반환된다")
   void searchNearby_narrowRadius() {
-    // FAC001 좌표와 매우 가까운 곳에서 검색, 매우 작은 반경
+    // FAC001 좌표와 동일한 지점에서 검색, 0.1km 반경
     List<FacilityDocument> results =
         facilitySearchRepository.searchNearby(37.5665, 126.978, 0.1, 10);
 
-    // 0.1km 반경이므로 FAC001만 포함될 가능성이 높음
-    assertThat(results).hasSizeLessThanOrEqualTo(1);
+    // 0.1km 반경이므로 FAC001(동일 좌표)만 정확히 1건 반환
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).getId()).isEqualTo("FAC001");
   }
 
   @Test

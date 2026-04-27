@@ -87,7 +87,7 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
                                                     ll ->
                                                         ll.lat(lat.doubleValue())
                                                             .lon(lng.doubleValue())))
-                                        .distance(radius + "km")
+                                        .distance(radius.toPlainString() + "km")
                                         .distanceType(GeoDistanceType.Arc)));
                   }
                   if ("TEMPORARY".equals(careType)) {
