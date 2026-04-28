@@ -1,6 +1,5 @@
 package com.aidom.api.global.config;
 
-import io.jsonwebtoken.Jwt;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
