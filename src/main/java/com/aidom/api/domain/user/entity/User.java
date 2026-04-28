@@ -97,4 +97,9 @@ public class User extends BaseEntity {
     this.addressLat = addressLat;
     this.addressLng = addressLng;
   }
+
+  public void updateSocialProfile(String name, String email) {
+    this.name = name;
+    this.email = email;
+  }
 }
