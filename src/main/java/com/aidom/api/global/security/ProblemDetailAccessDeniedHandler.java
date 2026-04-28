@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 import org.springframework.http.MediaType;
@@ -29,6 +30,7 @@ public class ProblemDetailAccessDeniedHandler implements AccessDeniedHandler {
     try {
       ErrorCode errorCode = ErrorCode.ACCESS_DENIED;
       response.setStatus(errorCode.getHttpStatus().value());
+      response.setCharacterEncoding(StandardCharsets.UTF_8.name());
       response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
 
       Map<String, Object> body =
