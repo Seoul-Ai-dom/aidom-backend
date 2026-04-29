@@ -11,7 +11,6 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app.auth")
-@ConfigurationPropertiesScan
 public class AppAuthProperties {
 
   private Jwt jwt = new Jwt();
