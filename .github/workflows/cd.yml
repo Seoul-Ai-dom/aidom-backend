@@ -56,12 +56,16 @@ jobs:
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           ES_URL: ${{ secrets.ES_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_REDIRECT_URI: ${{ secrets.KAKAO_REDIRECT_URI }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           command_timeout: 30m
-          envs: REGISTRY,IMAGE_NAME,GITHUB_SHA,DB_URL,DB_USERNAME,DB_PASSWORD,ES_URL
+          envs: REGISTRY,IMAGE_NAME,GITHUB_SHA,DB_URL,DB_USERNAME,DB_PASSWORD,ES_URL,JWT_SECRET,KAKAO_CLIENT_ID,KAKAO_CLIENT_SECRET,KAKAO_REDIRECT_URI
           script: |
             # GHCR 로그인
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -79,6 +83,10 @@ jobs:
               -e DB_URL \
               -e DB_USERNAME \
               -e DB_PASSWORD \
+              -e JWT_SECRET \
+              -e KAKAO_CLIENT_ID \
+              -e KAKAO_CLIENT_SECRET \
+              -e KAKAO_REDIRECT_URI \
               -e ES_URL \
               $NEW_IMAGE
 
@@ -112,6 +120,10 @@ jobs:
               -e DB_URL \
               -e DB_USERNAME \
               -e DB_PASSWORD \
+              -e JWT_SECRET \
+              -e KAKAO_CLIENT_ID \
+              -e KAKAO_CLIENT_SECRET \
+              -e KAKAO_REDIRECT_URI \
               -e ES_URL \
               $NEW_IMAGE
 
