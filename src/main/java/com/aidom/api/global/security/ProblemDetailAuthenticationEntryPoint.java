@@ -26,6 +26,11 @@ public class ProblemDetailAuthenticationEntryPoint implements AuthenticationEntr
       HttpServletRequest request,
       HttpServletResponse response,
       AuthenticationException authException) {
+    Object errorCodeAttribute = request.getAttribute(JwtAuthenticationFilter.AUTH_ERROR_CODE_ATTR);
+    if (errorCodeAttribute instanceof ErrorCode errorCode) {
+      write(response, errorCode);
+      return;
+    }
     write(response, ErrorCode.UNAUTHORIZED);
   }
 
