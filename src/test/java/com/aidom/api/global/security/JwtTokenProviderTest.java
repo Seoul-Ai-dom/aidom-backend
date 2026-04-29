@@ -34,7 +34,8 @@ class JwtTokenProviderTest {
     User user = createUser();
     String accessToken = jwtTokenProvider.createAccessToken(user);
 
-    AuthenticatedUserPrincipal principal = jwtTokenProvider.getPrincipalFromAccessToken(accessToken);
+    AuthenticatedUserPrincipal principal =
+        jwtTokenProvider.getPrincipalFromAccessToken(accessToken);
 
     assertThat(principal.userId()).isEqualTo(1L);
     assertThat(principal.role()).isEqualTo(Role.USER);

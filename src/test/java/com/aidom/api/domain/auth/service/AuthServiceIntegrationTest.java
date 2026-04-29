@@ -64,7 +64,10 @@ class AuthServiceIntegrationTest {
     assertThat(response.refreshToken()).isNotBlank();
     assertThat(response.tokenType()).isEqualTo("Bearer");
     assertThat(response.userStatus()).isEqualTo(UserStatus.ACTIVE);
-    assertThat(authCodeRepository.findByCodeHash(hash(rawCode))).get().extracting(AuthCode::isUsed).isEqualTo(true);
+    assertThat(authCodeRepository.findByCodeHash(hash(rawCode)))
+        .get()
+        .extracting(AuthCode::isUsed)
+        .isEqualTo(true);
     assertThat(refreshTokenRepository.findByTokenHash(hash(response.refreshToken()))).isPresent();
   }
 
