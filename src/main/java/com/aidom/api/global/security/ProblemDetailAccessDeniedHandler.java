@@ -54,10 +54,13 @@ public class ProblemDetailAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
         try {
           response.sendError(
-              ErrorCode.ACCESS_DENIED.getHttpStatus().value(), ErrorCode.ACCESS_DENIED.getMessage());
+              ErrorCode.ACCESS_DENIED.getHttpStatus().value(),
+              ErrorCode.ACCESS_DENIED.getMessage());
         } catch (IOException ioException) {
           log.error(
-              "Failed to send fallback 403 error response. uri={}", request.getRequestURI(), ioException);
+              "Failed to send fallback 403 error response. uri={}",
+              request.getRequestURI(),
+              ioException);
         }
       }
     }
