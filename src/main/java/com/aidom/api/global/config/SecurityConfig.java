@@ -9,6 +9,7 @@ import com.aidom.api.global.security.JwtAuthenticationFilter;
 import com.aidom.api.global.security.ProblemDetailAccessDeniedHandler;
 import com.aidom.api.global.security.ProblemDetailAuthenticationEntryPoint;
 import java.util.List;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,7 @@ import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -33,6 +35,7 @@ public class SecurityConfig {
       ProblemDetailAccessDeniedHandler accessDeniedHandler,
       CustomOAuth2UserService customOAuth2UserService,
       OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
+      ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider,
       AppAuthProperties appAuthProperties)
       throws Exception {
 
@@ -73,12 +76,15 @@ public class SecurityConfig {
                     .access(
                         (authentication, context) ->
                             new AuthorizationDecision(isActiveOrAdmin(authentication.get()))))
-        .oauth2Login(
-            oauth2 ->
-                oauth2
-                    .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
-                    .successHandler(oAuth2AuthenticationSuccessHandler))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+    if (clientRegistrationRepositoryProvider.getIfAvailable() != null) {
+      http.oauth2Login(
+          oauth2 ->
+              oauth2
+                  .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
+                  .successHandler(oAuth2AuthenticationSuccessHandler));
+    }
     return http.build();
   }
 
