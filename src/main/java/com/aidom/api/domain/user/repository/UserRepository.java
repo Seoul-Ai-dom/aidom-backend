@@ -1,4 +1,4 @@
-package com.aidom.api.domain.user;
+package com.aidom.api.domain.user.repository;
 
 import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.domain.user.enums.Provider;

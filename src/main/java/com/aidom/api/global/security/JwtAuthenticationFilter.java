@@ -1,6 +1,6 @@
 package com.aidom.api.global.security;
 
-import com.aidom.api.domain.user.UserRepository;
+import com.aidom.api.domain.user.repository.UserRepository;
 import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
