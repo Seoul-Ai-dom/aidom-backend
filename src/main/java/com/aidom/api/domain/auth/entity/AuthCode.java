@@ -4,6 +4,7 @@ import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -35,9 +36,15 @@ public class AuthCode extends BaseEntity {
 
   @Builder
   private AuthCode(User user, String codeHash, LocalDateTime expiresAt) {
-    this.user = user;
-    this.codeHash = codeHash;
-    this.expiresAt = expiresAt;
+    this.user = Objects.requireNonNull(user, "user must not be null");
+    this.expiresAt = Objects.requireNonNull(expiresAt, "expiresAt must not be null");
+
+    String normalizedCodeHash =
+        Objects.requireNonNull(codeHash, "codeHash must not be null").trim();
+    if (normalizedCodeHash.isEmpty()) {
+      throw new IllegalArgumentException("codeHash must not be blank");
+    }
+    this.codeHash = normalizedCodeHash;
   }
 
   public boolean isExpired(LocalDateTime now) {
@@ -50,5 +57,17 @@ public class AuthCode extends BaseEntity {
 
   public void markUsed(LocalDateTime now) {
     this.usedAt = now;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof AuthCode authCode)) return false;
+    return getId() != null && getId().equals(authCode.getId());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(getId());
   }
 }
