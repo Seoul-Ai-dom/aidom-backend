@@ -99,7 +99,11 @@ public class User extends BaseEntity {
   }
 
   public void updateSocialProfile(String name, String email) {
-    this.name = name;
-    this.email = email;
+    if (name != null && !name.isBlank()) {
+      this.name = name.trim();
+    }
+    if (email != null && !email.isBlank()) {
+      this.email = email.trim();
+    }
   }
 }

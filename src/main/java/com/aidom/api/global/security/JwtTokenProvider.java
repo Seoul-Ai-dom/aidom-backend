@@ -19,15 +19,10 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 import javax.crypto.SecretKey;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 public class JwtTokenProvider {
-
-  private static final String DEV_FALLBACK_BASE64_SECRET =
-      "VGhpc0lzQVRlc3RTZWNyZXRLZXlGb3JBaWRvbUF1dGhUb2tlbg==";
 
   private final SecretKey key;
   private final AppAuthProperties properties;
@@ -108,8 +103,8 @@ public class JwtTokenProvider {
 
   private static byte[] resolveSecretBytes(String rawSecret) {
     if (rawSecret == null || rawSecret.isBlank()) {
-      log.warn("JWT secret is missing or blank. Falling back to development secret.");
-      return Decoders.BASE64.decode(DEV_FALLBACK_BASE64_SECRET);
+      throw new IllegalArgumentException(
+          "app.auth.jwt.secret must not be null or blank. Configure JWT_SECRET for the active profile.");
     }
     try {
       return Decoders.BASE64.decode(rawSecret);

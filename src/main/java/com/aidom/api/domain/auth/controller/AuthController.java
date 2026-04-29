@@ -37,7 +37,9 @@ public class AuthController {
     return ResponseEntity.ok(authService.exchangeCode(request.code()));
   }
 
-  @Operation(summary = "토큰 재발급", description = "refresh token rotation 방식으로 access/refresh 토큰을 재발급합니다.")
+  @Operation(
+      summary = "토큰 재발급",
+      description = "refresh token rotation 방식으로 access/refresh 토큰을 재발급합니다.")
   @ApiResponse(responseCode = "200", description = "토큰 재발급 성공")
   @ApiResponse(responseCode = "401", description = "유효하지 않거나 만료된 refresh token")
   @PostMapping("/refresh")

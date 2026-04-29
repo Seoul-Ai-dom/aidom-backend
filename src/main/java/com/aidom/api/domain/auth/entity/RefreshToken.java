@@ -4,6 +4,7 @@ import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -54,5 +55,17 @@ public class RefreshToken extends BaseEntity {
   public void revoke(LocalDateTime now, String replacedByHash) {
     this.revokedAt = now;
     this.replacedByHash = replacedByHash;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof RefreshToken that)) return false;
+    return getId() != null && getId().equals(that.getId());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(getId());
   }
 }

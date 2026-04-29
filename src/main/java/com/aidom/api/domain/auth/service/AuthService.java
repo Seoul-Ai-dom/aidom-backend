@@ -13,7 +13,6 @@ import com.aidom.api.domain.user.repository.UserRepository;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
 import com.aidom.api.global.security.JwtTokenProvider;
-import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Clock;
@@ -22,6 +21,7 @@ import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
