@@ -50,6 +50,10 @@ public class AuthService {
 
   @Transactional
   public String handleOAuthLogin(Provider provider, String providerId, String email, String name) {
+    if (providerId == null || providerId.isBlank()) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED);
+    }
+
     User user =
         userRepository
             .findByProviderAndProviderId(provider, providerId)

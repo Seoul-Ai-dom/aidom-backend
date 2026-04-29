@@ -1,6 +1,5 @@
 package com.aidom.api.domain.auth.service;
 
-import java.util.Collections;
 import java.util.Map;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -19,6 +18,17 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
   public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
     OAuth2User user = delegate.loadUser(userRequest);
     Map<String, Object> attrs = user.getAttributes();
-    return new DefaultOAuth2User(Collections.emptyList(), attrs, "id");
+    String userNameAttributeName =
+        userRequest
+            .getClientRegistration()
+            .getProviderDetails()
+            .getUserInfoEndpoint()
+            .getUserNameAttributeName();
+    if (userNameAttributeName == null || userNameAttributeName.isBlank()) {
+      throw new IllegalStateException(
+          "OAuth2 user-name-attribute is not configured for registration: "
+              + userRequest.getClientRegistration().getRegistrationId());
+    }
+    return new DefaultOAuth2User(user.getAuthorities(), attrs, userNameAttributeName);
   }
 }

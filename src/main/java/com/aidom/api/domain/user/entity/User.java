@@ -45,16 +45,15 @@ public class User extends BaseEntity {
   private UserStatus status;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column
   private Gender gender;
 
-  @Column(nullable = false)
-  private LocalDate birthDate;
+  @Column private LocalDate birthDate;
 
-  @Column(nullable = false, length = 20)
+  @Column(length = 20)
   private String phone;
 
-  @Column(nullable = false, length = 50)
+  @Column(length = 50)
   private String district;
 
   @Column(length = 200)

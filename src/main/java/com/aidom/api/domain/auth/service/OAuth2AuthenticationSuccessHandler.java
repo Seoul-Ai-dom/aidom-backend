@@ -10,6 +10,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -31,9 +32,16 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
       HttpServletRequest request, HttpServletResponse response, Authentication authentication)
       throws IOException, ServletException {
     OAuth2User user = (OAuth2User) authentication.getPrincipal();
-    String registrationId = request.getRequestURI().contains("kakao") ? "kakao" : "google";
+    OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+    String registrationId = oauthToken.getAuthorizedClientRegistrationId();
 
-    Provider provider = "kakao".equalsIgnoreCase(registrationId) ? Provider.KAKAO : Provider.GOOGLE;
+    Provider provider =
+        switch (registrationId.toLowerCase()) {
+          case "kakao" -> Provider.KAKAO;
+          case "google" -> Provider.GOOGLE;
+          default ->
+              throw new IllegalStateException("Unsupported registrationId: " + registrationId);
+        };
 
     OAuthProfile profile = extractProfile(provider, user.getAttributes());
     String code =
