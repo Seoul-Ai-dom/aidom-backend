@@ -23,6 +23,7 @@ public final class FacilityDocumentMapper {
         .bookingRequired(facility.isBookingRequired())
         .hasRegularCare(facility.isHasRegularCare())
         .hasTemporaryCare(facility.isHasTemporaryCare())
+        .hasRegularProgram(facility.isHasRegularProgram())
         .avgRating(extractAvgRating(facility.getStats()))
         .build();
   }
