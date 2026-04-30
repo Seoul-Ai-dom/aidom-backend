@@ -5,8 +5,8 @@ import com.aidom.api.domain.user.enums.Provider;
 import com.aidom.api.domain.user.repository.UserRepository;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserWithdrawalService {
@@ -19,14 +19,13 @@ public class UserWithdrawalService {
     this.kakaoUnlinkClient = kakaoUnlinkClient;
   }
 
-  @Transactional
   public void withdraw(Long userId) {
     User user =
         userRepository
-            .findById(userId)
+            .findByIdIncludingDeleted(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
 
-    if (user.isWithdrawn()) {
+    if (user.isWithdrawn() || user.getDeletedAt() != null) {
       throw new CustomException(ErrorCode.ALREADY_WITHDRAWN_USER);
     }
 
@@ -34,7 +33,7 @@ public class UserWithdrawalService {
       kakaoUnlinkClient.unlink(parseKakaoUserId(user.getProviderId()));
     }
 
-    userRepository.delete(user);
+    softDelete(userId);
   }
 
   private Long parseKakaoUserId(String providerId) {
@@ -42,6 +41,14 @@ public class UserWithdrawalService {
       return Long.parseLong(providerId);
     } catch (NumberFormatException e) {
       throw new CustomException(ErrorCode.KAKAO_UNLINK_FAILED);
+    }
+  }
+
+  private void softDelete(Long userId) {
+    try {
+      userRepository.deleteById(userId);
+    } catch (EmptyResultDataAccessException e) {
+      throw new CustomException(ErrorCode.ALREADY_WITHDRAWN_USER);
     }
   }
 }
