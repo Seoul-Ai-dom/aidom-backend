@@ -49,7 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         User user =
             userRepository
-                .findById(principal.userId())
+                .findByIdIncludingDeleted(principal.userId())
                 .orElseThrow(() -> new CustomException(ErrorCode.UNAUTHORIZED));
 
         AuthenticatedUserPrincipal refreshedPrincipal =
