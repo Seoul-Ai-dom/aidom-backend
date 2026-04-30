@@ -50,7 +50,7 @@ public class UserOnboardingService {
       boolean isPrimary = i == 0;
       Child child =
           Child.of(
-              childInfo.name().trim(),
+              normalizeName(childInfo.name()),
               childInfo.birthDate(),
               childInfo.gender(),
               normalizeNote(childInfo.specialNote()),
@@ -68,5 +68,9 @@ public class UserOnboardingService {
       return null;
     }
     return note.trim();
+  }
+
+  private String normalizeName(String name) {
+    return name.trim();
   }
 }

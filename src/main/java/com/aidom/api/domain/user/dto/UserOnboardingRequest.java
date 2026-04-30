@@ -60,14 +60,26 @@ public record UserOnboardingRequest(
 
   @Schema(description = "아이 정보")
   public record ChildInfo(
-      @Size(max = 50) @Schema(description = "아이 이름", example = "김아이") String name,
-      @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy.MM.dd")
-          @Schema(description = "아이 생년월일 (yyyy.MM.dd)", example = "2021.03.15")
+      @NotBlank
+          @Size(max = 50)
+          @Schema(
+              description = "아이 이름",
+              example = "김아이",
+              requiredMode = Schema.RequiredMode.REQUIRED)
+          String name,
+      @NotNull
+          @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy.MM.dd")
+          @Schema(
+              description = "아이 생년월일 (yyyy.MM.dd)",
+              example = "2021.03.15",
+              requiredMode = Schema.RequiredMode.REQUIRED)
           LocalDate birthDate,
-      @Schema(
+      @NotNull
+          @Schema(
               description = "아이 성별 (MALE=남자, FEMALE=여자)",
               allowableValues = {"MALE", "FEMALE"},
-              example = "MALE")
+              example = "MALE",
+              requiredMode = Schema.RequiredMode.REQUIRED)
           Gender gender,
       @Size(max = 1000) @Schema(description = "특이사항/알레르기 메모", example = "계란 알레르기", nullable = true)
           String specialNote) {}
