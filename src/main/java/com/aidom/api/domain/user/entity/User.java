@@ -15,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 @Entity
@@ -22,7 +23,9 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AttributeOverride(name = "id", column = @Column(name = "user_id"))
-@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(
+    sql = "UPDATE users SET status = 'DELETED', deleted_at = CURRENT_TIMESTAMP WHERE user_id = ?")
+@SQLRestriction("status in ('ACTIVE','ONBOARDING') and deleted_at IS NULL")
 public class User extends BaseEntity {
 
   @Column(nullable = false, length = 50)
@@ -135,5 +138,9 @@ public class User extends BaseEntity {
   public void addChild(Child child) {
     children.add(child);
     child.assignUser(this);
+  }
+
+  public boolean isWithdrawn() {
+    return status == UserStatus.DELETED || status == UserStatus.WITHDRAW;
   }
 }

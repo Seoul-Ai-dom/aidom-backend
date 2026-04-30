@@ -24,12 +24,14 @@ public enum ErrorCode {
   INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A002", "유효하지 않은 토큰입니다."),
   EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A003", "만료된 토큰입니다."),
   ACCESS_DENIED(HttpStatus.FORBIDDEN, "A004", "해당 리소스에 접근할 권한이 없습니다."),
+  KAKAO_UNLINK_FAILED(HttpStatus.BAD_GATEWAY, "A005", "카카오 연동 해제에 실패했습니다."),
 
   // Validation
   DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "V001", "이미 존재하는 데이터입니다."),
   BUSINESS_VALIDATION_ERROR(
       HttpStatus.UNPROCESSABLE_ENTITY, "V002", "비즈니스 규칙 위반 또는 처리할 수 없는 요청입니다."),
   INVALID_DISTRICT_VALUE(HttpStatus.BAD_REQUEST, "V003", "서울특별시 자치구(district) 값이 올바르지 않습니다."),
+  ALREADY_WITHDRAWN_USER(HttpStatus.UNPROCESSABLE_ENTITY, "V004", "이미 탈퇴한 사용자입니다."),
 
   // Facility
   FACILITY_NOT_FOUND(HttpStatus.NOT_FOUND, "F001", "시설을 찾을 수 없습니다."),
