@@ -70,7 +70,9 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/facilities/**")
                     .permitAll()
-                    .requestMatchers("/api/v1/users/me/onboarding")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/users/me/onboarding")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/v1/users/me")
                     .authenticated()
                     .anyRequest()
                     .access(

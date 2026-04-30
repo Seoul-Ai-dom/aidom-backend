@@ -9,12 +9,16 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "children")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AttributeOverride(name = "id", column = @Column(name = "child_id"))
+@SQLDelete(sql = "UPDATE children SET deleted_at = CURRENT_TIMESTAMP WHERE child_id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Child extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -53,5 +57,20 @@ public class Child extends BaseEntity {
     this.gender = gender;
     this.specialNote = specialNote;
     this.isPrimary = isPrimary;
+  }
+
+  public static Child of(
+      String name, LocalDate birthDate, Gender gender, String specialNote, boolean isPrimary) {
+    return Child.builder()
+        .name(name)
+        .birthDate(birthDate)
+        .gender(gender)
+        .specialNote(specialNote)
+        .isPrimary(isPrimary)
+        .build();
+  }
+
+  void assignUser(User user) {
+    this.user = user;
   }
 }

@@ -1,18 +1,21 @@
 package com.aidom.api.domain.user.entity;
 
+import com.aidom.api.domain.user.enums.ParentRelation;
 import com.aidom.api.domain.user.enums.Provider;
 import com.aidom.api.domain.user.enums.Role;
 import com.aidom.api.domain.user.enums.UserStatus;
 import com.aidom.api.global.common.entity.BaseEntity;
-import com.aidom.api.global.common.entity.Gender;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 @Entity
@@ -20,7 +23,9 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AttributeOverride(name = "id", column = @Column(name = "user_id"))
-@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(
+    sql = "UPDATE users SET status = 'DELETED', deleted_at = CURRENT_TIMESTAMP WHERE user_id = ?")
+@SQLRestriction("status in ('ACTIVE','ONBOARDING') and deleted_at IS NULL")
 public class User extends BaseEntity {
 
   @Column(nullable = false, length = 50)
@@ -45,13 +50,16 @@ public class User extends BaseEntity {
   private UserStatus status;
 
   @Enumerated(EnumType.STRING)
-  @Column
-  private Gender gender;
+  @Column(length = 20)
+  private ParentRelation relation;
 
   @Column private LocalDate birthDate;
 
   @Column(length = 20)
   private String phone;
+
+  @Column(length = 50)
+  private String city;
 
   @Column(length = 50)
   private String district;
@@ -65,6 +73,9 @@ public class User extends BaseEntity {
   @Column(precision = 10, scale = 7)
   private BigDecimal addressLng;
 
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Child> children = new ArrayList<>();
+
   private LocalDateTime deletedAt;
 
   @Builder
@@ -75,9 +86,10 @@ public class User extends BaseEntity {
       String providerId,
       Role role,
       UserStatus status,
-      Gender gender,
+      ParentRelation relation,
       LocalDate birthDate,
       String phone,
+      String city,
       String district,
       String addressDetail,
       BigDecimal addressLat,
@@ -88,9 +100,10 @@ public class User extends BaseEntity {
     this.providerId = providerId;
     this.role = role;
     this.status = status;
-    this.gender = gender;
+    this.relation = relation;
     this.birthDate = birthDate;
     this.phone = phone;
+    this.city = city;
     this.district = district;
     this.addressDetail = addressDetail;
     this.addressLat = addressLat;
@@ -104,5 +117,30 @@ public class User extends BaseEntity {
     if (email != null && !email.isBlank()) {
       this.email = email.trim();
     }
+  }
+
+  public void completeOnboarding(
+      String name,
+      LocalDate birthDate,
+      ParentRelation relation,
+      String city,
+      String district,
+      String phone) {
+    this.name = name;
+    this.birthDate = birthDate;
+    this.relation = relation;
+    this.city = city;
+    this.district = district;
+    this.phone = phone;
+    this.status = UserStatus.ACTIVE;
+  }
+
+  public void addChild(Child child) {
+    children.add(child);
+    child.assignUser(this);
+  }
+
+  public boolean isWithdrawn() {
+    return status == UserStatus.DELETED || status == UserStatus.WITHDRAW;
   }
 }

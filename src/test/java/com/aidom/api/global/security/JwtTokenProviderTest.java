@@ -7,7 +7,6 @@ import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.domain.user.enums.Provider;
 import com.aidom.api.domain.user.enums.Role;
 import com.aidom.api.domain.user.enums.UserStatus;
-import com.aidom.api.global.common.entity.Gender;
 import com.aidom.api.global.config.AppAuthProperties;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
@@ -65,7 +64,6 @@ class JwtTokenProviderTest {
             .providerId("kakao-123")
             .role(Role.USER)
             .status(UserStatus.ACTIVE)
-            .gender(Gender.MALE)
             .birthDate(LocalDate.of(1990, 1, 1))
             .phone("01012345678")
             .district("강남구")

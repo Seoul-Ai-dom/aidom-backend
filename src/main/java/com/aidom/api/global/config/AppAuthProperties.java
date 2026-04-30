@@ -15,6 +15,7 @@ public class AppAuthProperties {
   private Jwt jwt = new Jwt();
   private OAuth2 oAuth2 = new OAuth2();
   private Cors cors = new Cors();
+  private Kakao kakao = new Kakao();
 
   @Getter
   @Setter
@@ -36,5 +37,14 @@ public class AppAuthProperties {
   @Setter
   public static class Cors {
     private List<String> allowedOrigins = new ArrayList<>();
+  }
+
+  @Getter
+  @Setter
+  public static class Kakao {
+    private String adminKey;
+    private String unlinkUri = "https://kapi.kakao.com/v1/user/unlink";
+    private Duration connectTimeout = Duration.ofSeconds(2);
+    private Duration readTimeout = Duration.ofSeconds(5);
   }
 }
