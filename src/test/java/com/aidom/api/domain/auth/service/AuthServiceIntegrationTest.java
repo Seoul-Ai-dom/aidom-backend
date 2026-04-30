@@ -13,7 +13,6 @@ import com.aidom.api.domain.user.enums.Provider;
 import com.aidom.api.domain.user.enums.Role;
 import com.aidom.api.domain.user.enums.UserStatus;
 import com.aidom.api.domain.user.repository.UserRepository;
-import com.aidom.api.global.common.entity.Gender;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
 import com.aidom.api.global.security.JwtTokenProvider;
@@ -142,7 +141,6 @@ class AuthServiceIntegrationTest {
         .providerId(providerId)
         .role(Role.USER)
         .status(UserStatus.ACTIVE)
-        .gender(Gender.FEMALE)
         .birthDate(LocalDate.of(1992, 2, 2))
         .phone("01011112222")
         .district("서초구")
