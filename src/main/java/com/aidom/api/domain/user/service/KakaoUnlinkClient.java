@@ -5,6 +5,7 @@ import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -16,15 +17,19 @@ import org.springframework.web.client.RestClientResponseException;
 public class KakaoUnlinkClient {
 
   private final RestClient restClient;
-  private final AppAuthProperties authProperties;
+  private final AppAuthProperties.Kakao kakaoProperties;
 
   public KakaoUnlinkClient(RestClient.Builder restClientBuilder, AppAuthProperties authProperties) {
-    this.restClient = restClientBuilder.build();
-    this.authProperties = authProperties;
+    this.kakaoProperties = authProperties.getKakao();
+
+    SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+    requestFactory.setConnectTimeout(kakaoProperties.getConnectTimeout());
+    requestFactory.setReadTimeout(kakaoProperties.getReadTimeout());
+    this.restClient = restClientBuilder.requestFactory(requestFactory).build();
   }
 
   public void unlink(Long kakaoUserId) {
-    String adminKey = authProperties.getKakao().getAdminKey();
+    String adminKey = kakaoProperties.getAdminKey();
     if (adminKey == null || adminKey.isBlank()) {
       throw new CustomException(ErrorCode.KAKAO_UNLINK_FAILED);
     }
@@ -36,7 +41,7 @@ public class KakaoUnlinkClient {
     try {
       restClient
           .post()
-          .uri(authProperties.getKakao().getUnlinkUri())
+          .uri(kakaoProperties.getUnlinkUri())
           .contentType(MediaType.APPLICATION_FORM_URLENCODED)
           .header("Authorization", "KakaoAK " + adminKey.trim())
           .body(form)

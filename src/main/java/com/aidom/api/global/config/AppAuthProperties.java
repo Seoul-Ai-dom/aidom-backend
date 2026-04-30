@@ -44,5 +44,7 @@ public class AppAuthProperties {
   public static class Kakao {
     private String adminKey;
     private String unlinkUri = "https://kapi.kakao.com/v1/user/unlink";
+    private Duration connectTimeout = Duration.ofSeconds(2);
+    private Duration readTimeout = Duration.ofSeconds(5);
   }
 }
