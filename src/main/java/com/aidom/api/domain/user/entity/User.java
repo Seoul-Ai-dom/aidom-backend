@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -58,6 +59,9 @@ public class User extends BaseEntity {
   @Column(length = 20)
   private String phone;
 
+  @Column(length = 200)
+  private String address;
+
   @Column(length = 50)
   private String city;
 
@@ -74,6 +78,7 @@ public class User extends BaseEntity {
   private BigDecimal addressLng;
 
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("isPrimary DESC, id ASC")
   private List<Child> children = new ArrayList<>();
 
   private LocalDateTime deletedAt;
@@ -89,6 +94,7 @@ public class User extends BaseEntity {
       ParentRelation relation,
       LocalDate birthDate,
       String phone,
+      String address,
       String city,
       String district,
       String addressDetail,
@@ -103,6 +109,7 @@ public class User extends BaseEntity {
     this.relation = relation;
     this.birthDate = birthDate;
     this.phone = phone;
+    this.address = address;
     this.city = city;
     this.district = district;
     this.addressDetail = addressDetail;
@@ -119,6 +126,11 @@ public class User extends BaseEntity {
     }
   }
 
+  public void syncSocialIdentity(Provider provider, String providerId) {
+    this.provider = provider;
+    this.providerId = providerId;
+  }
+
   public void completeOnboarding(
       String name,
       LocalDate birthDate,
@@ -126,12 +138,12 @@ public class User extends BaseEntity {
       String city,
       String district,
       String phone) {
-    this.name = name;
+    this.name = normalizeText(name);
     this.birthDate = birthDate;
     this.relation = relation;
-    this.city = city;
-    this.district = district;
-    this.phone = phone;
+    this.city = normalizeText(city);
+    this.district = normalizeText(district);
+    this.phone = normalizeText(phone);
     this.status = UserStatus.ACTIVE;
   }
 
@@ -140,7 +152,45 @@ public class User extends BaseEntity {
     child.assignUser(this);
   }
 
+  public void removeChild(Child child) {
+    children.remove(child);
+    child.assignUser(null);
+  }
+
+  public void clearChildren() {
+    Iterator<Child> iterator = children.iterator();
+    while (iterator.hasNext()) {
+      Child child = iterator.next();
+      iterator.remove();
+      child.assignUser(null);
+    }
+  }
+
+  public void updateProfile(
+      String name,
+      ParentRelation relation,
+      LocalDate birthDate,
+      String phone,
+      String address,
+      String detailAddress) {
+    this.name = normalizeText(name);
+    this.relation = relation;
+    this.birthDate = birthDate;
+    this.phone = normalizeText(phone);
+    this.address = normalizeText(address);
+    this.addressDetail = normalizeText(detailAddress);
+  }
+
   public boolean isWithdrawn() {
     return status == UserStatus.DELETED || status == UserStatus.WITHDRAW;
+  }
+
+  public void reactivateForRejoin() {
+    this.status = UserStatus.ONBOARDING;
+    this.deletedAt = null;
+  }
+
+  private String normalizeText(String value) {
+    return value == null ? null : value.trim();
   }
 }
