@@ -30,10 +30,10 @@ public record UserOnboardingRequest(
               requiredMode = Schema.RequiredMode.REQUIRED)
           String name,
       @NotNull
-          @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy.MM.dd")
+          @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
           @Schema(
-              description = "부모 생년월일 (yyyy.MM.dd)",
-              example = "1980.01.01",
+              description = "부모 생년월일 (yyyy-MM-dd)",
+              example = "1980-01-01",
               requiredMode = Schema.RequiredMode.REQUIRED)
           LocalDate birthDate,
       @NotNull
@@ -68,10 +68,10 @@ public record UserOnboardingRequest(
               requiredMode = Schema.RequiredMode.REQUIRED)
           String name,
       @NotNull
-          @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy.MM.dd")
+          @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
           @Schema(
-              description = "아이 생년월일 (yyyy.MM.dd)",
-              example = "2021.03.15",
+              description = "아이 생년월일 (yyyy-MM-dd)",
+              example = "2021-03-15",
               requiredMode = Schema.RequiredMode.REQUIRED)
           LocalDate birthDate,
       @NotNull

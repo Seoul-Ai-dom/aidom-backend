@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,26 +54,16 @@ public class AuthService {
     if (providerId == null || providerId.isBlank()) {
       throw new CustomException(ErrorCode.UNAUTHORIZED);
     }
+    if (email == null || email.isBlank()) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED);
+    }
 
-    User user =
-        userRepository
-            .findByProviderAndProviderId(provider, providerId)
-            .map(
-                existing -> {
-                  existing.updateSocialProfile(name, email);
-                  return existing;
-                })
-            .orElseGet(
-                () ->
-                    userRepository.save(
-                        User.builder()
-                            .provider(provider)
-                            .providerId(providerId)
-                            .email(email)
-                            .name(name)
-                            .role(Role.USER)
-                            .status(UserStatus.ONBOARDING)
-                            .build()));
+    String normalizedEmail = email.trim();
+
+    User user = findExistingUser(provider, providerId, normalizedEmail, name);
+    if (user == null) {
+      user = createUser(provider, providerId, normalizedEmail, name);
+    }
 
     String rawCode = UUID.randomUUID().toString().replace("-", "");
     AuthCode authCode =
@@ -83,6 +74,73 @@ public class AuthService {
             .build();
     authCodeRepository.save(authCode);
     return rawCode;
+  }
+
+  private User findExistingUser(Provider provider, String providerId, String email, String name) {
+    Optional<User> providerUser = userRepository.findByProviderAndProviderId(provider, providerId);
+    if (providerUser.isPresent()) {
+      User existing = providerUser.get();
+      existing.updateSocialProfile(name, email);
+      return existing;
+    }
+
+    Optional<User> emailUser = userRepository.findByEmail(email);
+    if (emailUser.isPresent()) {
+      User existing = emailUser.get();
+      existing.syncSocialIdentity(provider, providerId);
+      existing.updateSocialProfile(name, email);
+      return existing;
+    }
+
+    Optional<User> deletedByProvider =
+        userRepository.findByProviderAndProviderIdIncludingDeleted(provider.name(), providerId);
+    if (deletedByProvider.isPresent()) {
+      return recoverUser(deletedByProvider.get(), provider, providerId, email, name);
+    }
+
+    Optional<User> deletedUser = userRepository.findByEmailIncludingDeleted(email);
+    if (deletedUser.isPresent()) {
+      return recoverUser(deletedUser.get(), provider, providerId, email, name);
+    }
+
+    return null;
+  }
+
+  private User createUser(Provider provider, String providerId, String email, String name) {
+    try {
+      return userRepository.save(
+          User.builder()
+              .provider(provider)
+              .providerId(providerId)
+              .email(email)
+              .name(name)
+              .role(Role.USER)
+              .status(UserStatus.ONBOARDING)
+              .build());
+    } catch (DataIntegrityViolationException e) {
+      return userRepository
+          .findByEmailIncludingDeleted(email)
+          .map(
+              existing -> {
+                if (existing.isWithdrawn()) {
+                  existing.reactivateForRejoin();
+                }
+                existing.syncSocialIdentity(provider, providerId);
+                existing.updateSocialProfile(name, email);
+                return existing;
+              })
+          .orElseThrow(() -> e);
+    }
+  }
+
+  private User recoverUser(
+      User user, Provider provider, String providerId, String email, String name) {
+    if (user.isWithdrawn()) {
+      user.reactivateForRejoin();
+    }
+    user.syncSocialIdentity(provider, providerId);
+    user.updateSocialProfile(name, email);
+    return user;
   }
 
   @Transactional

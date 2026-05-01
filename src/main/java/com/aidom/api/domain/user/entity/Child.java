@@ -62,15 +62,37 @@ public class Child extends BaseEntity {
   public static Child of(
       String name, LocalDate birthDate, Gender gender, String specialNote, boolean isPrimary) {
     return Child.builder()
-        .name(name)
+        .name(normalizeText(name))
         .birthDate(birthDate)
         .gender(gender)
-        .specialNote(specialNote)
+        .specialNote(normalizeNote(specialNote))
         .isPrimary(isPrimary)
         .build();
   }
 
+  public void updateProfile(String name, LocalDate birthDate, Gender gender, String specialNote) {
+    this.name = normalizeText(name);
+    this.birthDate = birthDate;
+    this.gender = gender;
+    this.specialNote = normalizeNote(specialNote);
+  }
+
+  public void markPrimary(boolean primary) {
+    isPrimary = primary;
+  }
+
   void assignUser(User user) {
     this.user = user;
+  }
+
+  private static String normalizeText(String value) {
+    return value == null ? null : value.trim();
+  }
+
+  private static String normalizeNote(String note) {
+    if (note == null || note.isBlank()) {
+      return null;
+    }
+    return note.trim();
   }
 }

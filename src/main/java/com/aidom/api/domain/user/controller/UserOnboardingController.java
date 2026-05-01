@@ -8,6 +8,7 @@ import com.aidom.api.global.error.ErrorCode;
 import com.aidom.api.global.security.AuthenticatedUserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,7 +33,37 @@ public class UserOnboardingController {
 
   @Operation(
       summary = "회원가입 완료(온보딩)",
-      description = "ONBOARDING 상태의 유저가 부모/아이 정보를 저장하고 ACTIVE 상태로 전환합니다.")
+      description = "ONBOARDING 상태의 유저가 부모/아이 정보를 저장하고 ACTIVE 상태로 전환합니다.",
+      requestBody =
+          @io.swagger.v3.oas.annotations.parameters.RequestBody(
+              required = true,
+              content =
+                  @Content(
+                      schema = @Schema(implementation = UserOnboardingRequest.class),
+                      examples = {
+                        @ExampleObject(
+                            name = "온보딩 요청 예시",
+                            value =
+                                """
+                                {
+                                  "parentInfo": {
+                                    "name": "이윤서",
+                                    "relation": "MOTHER",
+                                    "birthDate": "1990-02-15",
+                                    "district": "용산구",
+                                    "phone": "010-0000-0000"
+                                  },
+                                  "children": [
+                                    {
+                                      "name": "짱구",
+                                      "gender": "MALE",
+                                      "birthDate": "2021-03-15",
+                                      "specialNote": "콩 알레르기"
+                                    }
+                                  ]
+                                }
+                                """)
+                      })))
   @ApiResponse(
       responseCode = "200",
       description = "온보딩 완료",

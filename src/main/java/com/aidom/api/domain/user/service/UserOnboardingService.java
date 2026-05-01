@@ -45,6 +45,8 @@ public class UserOnboardingService {
         district.getDescription(),
         parentInfo.phone().trim());
 
+    user.clearChildren();
+
     for (int i = 0; i < request.children().size(); i++) {
       UserOnboardingRequest.ChildInfo childInfo = request.children().get(i);
       boolean isPrimary = i == 0;
