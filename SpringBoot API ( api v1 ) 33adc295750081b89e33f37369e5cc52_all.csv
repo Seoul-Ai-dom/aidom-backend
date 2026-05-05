@@ -1,0 +1,40 @@
+﻿이름,endpoint,도메인,부가 설명,사람,선택
+자녀 추가 등록,/api/v1/children,,,"이윤서 ",POST
+온보딩 완료,/api/v1/users/me/onboarding,,,"이윤서 ",POST
+이용 내역 목록 조회,/api/v1/users/me/visits,📋 이용 내역 Visit History,,다연 정,GET
+구글 로그인,/api/v1/auth/google,,,"이윤서 ",POST
+내 리뷰 목록 조회,/api/v1/users/me/reviews,,,"이윤서 ",GET
+찜한 시설 목록 조회,/api/v1/users/me/bookmarks,💛 찜 Bookmarks,,다연 정,GET
+회원 탈퇴,/api/v1/auth/withdraw,,,"이윤서 ",DELETE
+자녀 삭제,/api/v1/children/{childId},,,"이윤서 ",DELETE
+시설 상세 조회,/api/v1/facilities/{facilityId},,,다연 정,GET
+홈 화면 데이터 조회,/api/v1/home,🏡 홈 화면 Home,홈 화면 구성에 필요한 데이터 일괄 반환,,GET
+이용 내역 등록,/api/v1/visits,,,다연 정,POST
+이용 내역 수정,/api/v1/visits/{visitId},,,다연 정,PATCH
+최근 방문 시설 조회,/api/v1/users/me/visits/recent,,,다연 정,GET
+자녀 정보 수정,/api/v1/children/{childId},,,"이윤서 ",PATCH
+찜 여부 확인,/api/v1/facilities/{facilityId}/bookmark/status,,시설 상세 페이지 하트 아이콘 상태용,다연 정,GET
+자녀 목록 조회,/api/v1/children,👶 자녀 Children,,"이윤서 ",GET
+시설 리뷰 목록 조회,/api/v1/facilities/{facilityId}/reviews,⭐ 리뷰 Reviews,,"이윤서 ",GET
+리뷰 삭제,/api/v1/reviews/{reviewId},,,"이윤서 ",DELETE
+리뷰 상세 조회,/api/v1/reviews/{reviewId},,,"이윤서 ",GET
+이용 내역 취소,/api/v1/visits/{visitId}/cancel,,,다연 정,PUT
+내 정보 조회,/api/v1/users/me,👤 사용자 Users,,"이윤서 ",GET
+이용 내역 상세 조회,/api/v1/visits/{visitId},,,다연 정,GET
+네이버 정보 일괄 동기화,/api/v1/admin/facilities/naver-sync/batch,,전체 또는 지정 시설의 네이버 정보 일괄 갱신 (배치 작업),"이윤서 ",POST
+네이버 정보 조회,/api/v1/facilities/{facilityId}/naver-info,🗺️ NaverMap API,,"이윤서 ",GET
+시설 AI 추천,/api/v1/facilities/recommend,,,다연 정,GET
+자녀 상세 조회,/api/v1/children/{childId},,,"이윤서 ",GET
+시설 찜하기,/api/v1/facilities/{facilityId}/bookmark,,,다연 정,POST
+리뷰 작성,/api/v1/facilities/{facilityId}/reviews,,,"이윤서 ",POST
+시설 검색,/api/v1/facilities/search,,,다연 정,GET
+내 정보 수정,/api/v1/users/me,,,"이윤서 ",PATCH
+카카오 로그인,/api/v1/auth/kakao,🔐 인증 Auth,,"이윤서 ",POST
+시설 목록 조회 (지도),/api/v1/facilities,🏠 시설 Facilities,,다연 정,GET
+주변 시설 조회,/api/v1/facilities/nearby,,,다연 정,GET
+토큰 갱신,/api/v1/auth/refresh,,,"이윤서 ",POST
+네이버 정보 동기화,/api/v1/admin/facilities/{facilityId}/naver-sync,,특정 시설의 네이버지도 정보를 최신 데이터로 갱신,"이윤서 ",POST
+로그아웃,/api/v1/auth/logout,,,"이윤서 ",POST
+시설 찜 해제,/api/v1/facilities/{facilityId}/bookmark,,,다연 정,DELETE
+시설 필터 옵션 조회,/api/v1/facilities/filters,,,다연 정,GET
+리뷰 수정,/api/v1/reviews/{reviewId},,,"이윤서 ",PATCH

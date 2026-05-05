@@ -6,7 +6,15 @@ import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.domain.visit.enums.VisitSource;
 import com.aidom.api.domain.visit.enums.VisitStatus;
 import com.aidom.api.global.common.entity.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -74,6 +82,26 @@ public class VisitHistory extends BaseEntity {
     this.endTime = endTime;
   }
 
+  public void updateSchedule(LocalDate visitDate, LocalTime startTime, LocalTime endTime) {
+    if (this.status != VisitStatus.PLANNED) {
+      throw new IllegalStateException("PLANNED 상태의 이용 내역만 수정할 수 있습니다.");
+    }
+
+    LocalTime nextStartTime = startTime != null ? startTime : this.startTime;
+    LocalTime nextEndTime = endTime != null ? endTime : this.endTime;
+    validateTimeRange(nextStartTime, nextEndTime);
+
+    if (visitDate != null) {
+      this.visitDate = visitDate;
+    }
+    if (startTime != null) {
+      this.startTime = startTime;
+    }
+    if (endTime != null) {
+      this.endTime = endTime;
+    }
+  }
+
   public void confirm(LocalDate visitDate, LocalTime startTime, LocalTime endTime) {
     if (this.status == VisitStatus.CONFIRMED) {
       throw new IllegalStateException("이미 확정된 이용 내역입니다.");
@@ -81,6 +109,9 @@ public class VisitHistory extends BaseEntity {
     if (this.status == VisitStatus.CANCELLED) {
       throw new IllegalStateException("취소된 이용 내역은 확정할 수 없습니다.");
     }
+
+    validateTimeRange(startTime, endTime);
+
     this.status = VisitStatus.CONFIRMED;
     this.visitDate = visitDate;
     this.startTime = startTime;
@@ -94,6 +125,12 @@ public class VisitHistory extends BaseEntity {
     }
     this.status = VisitStatus.CANCELLED;
     this.cancelledAt = LocalDateTime.now();
+  }
+
+  private void validateTimeRange(LocalTime startTime, LocalTime endTime) {
+    if (startTime != null && endTime != null && endTime.isBefore(startTime)) {
+      throw new IllegalArgumentException("종료 시간은 시작 시간보다 빠를 수 없습니다.");
+    }
   }
 
   @Override

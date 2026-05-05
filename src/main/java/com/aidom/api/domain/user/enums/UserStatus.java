@@ -4,5 +4,6 @@ public enum UserStatus {
   ONBOARDING,
   ACTIVE,
   INACTIVE,
-  WITHDRAW
+  WITHDRAW,
+  DELETED
 }
