@@ -14,8 +14,10 @@
 
 SET NAMES utf8mb4;
 
+-- 연령 경계는 ageMin/ageMax 모두 포함 기준으로 사용합니다.
+-- 필터/추천 결과가 겹치지 않도록 영유아는 0~5세, 초등은 6~12세로 구분합니다.
 SET @INFANT_AGE_MIN = 0;
-SET @INFANT_AGE_MAX = 6;
+SET @INFANT_AGE_MAX = 5;
 SET @ELEMENTARY_AGE_MIN = 6;
 SET @ELEMENTARY_AGE_MAX = 12;
 SET @YOUTH_AGE_MIN = 13;
@@ -729,30 +731,30 @@ FROM (
   FROM stg_kids_cafe
 ) src
 ON DUPLICATE KEY UPDATE
-  facility_name = VALUES(facility_name),
-  service_type_code = VALUES(service_type_code),
-  service_type = VALUES(service_type),
-  district_code = VALUES(district_code),
-  district_name = VALUES(district_name),
-  address = VALUES(address),
-  lat = VALUES(lat),
-  lng = VALUES(lng),
-  age_group = VALUES(age_group),
-  age_min = VALUES(age_min),
-  age_max = VALUES(age_max),
-  booking_required = VALUES(booking_required),
-  is_free = VALUES(is_free),
-  fee = VALUES(fee),
-  monthly_fee = VALUES(monthly_fee),
-  capacity_regular = VALUES(capacity_regular),
-  capacity_temporary = VALUES(capacity_temporary),
-  area_sqm = VALUES(area_sqm),
-  operating_days = VALUES(operating_days),
-  closed_days = VALUES(closed_days),
-  has_regular_program = VALUES(has_regular_program),
-  has_regular_care = VALUES(has_regular_care),
-  has_temporary_care = VALUES(has_temporary_care),
-  updated_at = VALUES(updated_at);
+  facility_name = src.facility_name,
+  service_type_code = src.service_type_code,
+  service_type = src.service_type,
+  district_code = src.district_code,
+  district_name = src.district_name,
+  address = src.address,
+  lat = src.lat,
+  lng = src.lng,
+  age_group = src.age_group,
+  age_min = src.age_min,
+  age_max = src.age_max,
+  booking_required = src.booking_required,
+  is_free = src.is_free,
+  fee = src.fee,
+  monthly_fee = src.monthly_fee,
+  capacity_regular = src.capacity_regular,
+  capacity_temporary = src.capacity_temporary,
+  area_sqm = src.area_sqm,
+  operating_days = src.operating_days,
+  closed_days = src.closed_days,
+  has_regular_program = src.has_regular_program,
+  has_regular_care = src.has_regular_care,
+  has_temporary_care = src.has_temporary_care,
+  updated_at = src.updated_at;
 
 INSERT INTO facility_external_info (
   facility_id,
@@ -855,9 +857,9 @@ FROM (
   FROM stg_kids_cafe
 ) ext
 ON DUPLICATE KEY UPDATE
-  phone = COALESCE(facility_external_info.phone, VALUES(phone)),
-  website = COALESCE(facility_external_info.website, VALUES(website)),
-  synced_at = GREATEST(facility_external_info.synced_at, VALUES(synced_at));
+  phone = COALESCE(facility_external_info.phone, ext.phone),
+  website = COALESCE(facility_external_info.website, ext.website),
+  synced_at = GREATEST(facility_external_info.synced_at, ext.synced_at);
 
 INSERT INTO facility_stats (
   facility_id,
