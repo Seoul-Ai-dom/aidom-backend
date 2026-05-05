@@ -1,24 +1,37 @@
 package com.aidom.api.domain.facility.controller;
 
-import com.aidom.api.domain.facility.dto.*;
+import com.aidom.api.domain.facility.dto.FacilityDetailResponse;
+import com.aidom.api.domain.facility.dto.FacilityFilterResponse;
+import com.aidom.api.domain.facility.dto.FacilityListResponse;
+import com.aidom.api.domain.facility.dto.FacilityRecommendResponse;
+import com.aidom.api.domain.facility.dto.FacilitySearchResponse;
 import com.aidom.api.domain.facility.service.FacilityService;
 import com.aidom.api.global.common.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "시설 Facilities", description = "시설 조회·검색·추천·필터 API")
 @RestController
 @RequestMapping("/api/v1/facilities")
 @RequiredArgsConstructor
+@Validated
 @ConditionalOnProperty(
     name = "spring.data.elasticsearch.repositories.enabled",
     havingValue = "true",
@@ -51,8 +64,14 @@ public class FacilityController {
           String careType,
       @Parameter(description = "정기 프로그램 여부") @RequestParam(required = false)
           Boolean hasRegularProgram,
-      @Parameter(description = "페이지 번호", example = "0") @RequestParam(defaultValue = "0") int page,
-      @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20")
+      @Parameter(description = "페이지 번호", example = "0")
+          @PositiveOrZero(message = "페이지 번호는 0 이상이어야 합니다.")
+          @RequestParam(defaultValue = "0")
+          int page,
+      @Parameter(description = "페이지 크기", example = "20")
+          @RequestParam(defaultValue = "20")
+          @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다.")
+          @Max(value = 100, message = "페이지 크기는 100 이하여야 합니다.")
           int size) {
     return ResponseEntity.ok(
         PageResponse.from(
@@ -76,8 +95,14 @@ public class FacilityController {
   public ResponseEntity<PageResponse<FacilitySearchResponse>> searchFacilities(
       @Parameter(description = "검색 키워드", required = true, example = "키움센터") @RequestParam
           String keyword,
-      @Parameter(description = "페이지 번호", example = "0") @RequestParam(defaultValue = "0") int page,
-      @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20")
+      @Parameter(description = "페이지 번호", example = "0")
+          @PositiveOrZero(message = "페이지 번호는 0 이상이어야 합니다.")
+          @RequestParam(defaultValue = "0")
+          int page,
+      @Parameter(description = "페이지 크기", example = "20")
+          @RequestParam(defaultValue = "20")
+          @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다.")
+          @Max(value = 100, message = "페이지 크기는 100 이하여야 합니다.")
           int size) {
     return ResponseEntity.ok(
         PageResponse.from(facilityService.searchFacilities(keyword, PageRequest.of(page, size))));
@@ -102,7 +127,10 @@ public class FacilityController {
           BigDecimal lat,
       @Parameter(description = "경도", example = "127.0473") @RequestParam(required = false)
           BigDecimal lng,
-      @Parameter(description = "최대 결과 수", example = "5") @RequestParam(defaultValue = "5")
+      @Parameter(description = "최대 결과 수", example = "5")
+          @RequestParam(defaultValue = "5")
+          @Min(value = 1, message = "최대 결과 수는 1 이상이어야 합니다.")
+          @Max(value = 100, message = "최대 결과 수는 100 이하여야 합니다.")
           int limit) {
     return ResponseEntity.ok(facilityService.recommendFacilities(childId, lat, lng, limit));
   }
@@ -117,7 +145,10 @@ public class FacilityController {
           BigDecimal lng,
       @Parameter(description = "반경(km)", example = "3.0") @RequestParam(defaultValue = "3.0")
           BigDecimal radius,
-      @Parameter(description = "최대 결과 수", example = "10") @RequestParam(defaultValue = "10")
+      @Parameter(description = "최대 결과 수", example = "10")
+          @RequestParam(defaultValue = "10")
+          @Min(value = 1, message = "최대 결과 수는 1 이상이어야 합니다.")
+          @Max(value = 100, message = "최대 결과 수는 100 이하여야 합니다.")
           int limit) {
     return ResponseEntity.ok(facilityService.getNearbyFacilities(lat, lng, radius, limit));
   }

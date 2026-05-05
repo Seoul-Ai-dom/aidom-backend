@@ -1,5 +1,6 @@
 package com.aidom.api.global.error;
 
+import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @Slf4j
@@ -36,20 +38,46 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             .map(error -> new ValidationError(error.getField(), error.getDefaultMessage()))
             .toList();
 
-    // ProblemDetail 기본 설정
-    ProblemDetail problemDetail =
-        ProblemDetail.forStatusAndDetail(status, "요청 데이터에 유효하지 않은 값이 포함되어 있습니다.");
+    return handleValidationException(ex, headers, status, request, errors);
+  }
 
-    // 표준 필드 커스텀 (type, title)
-    problemDetail.setType(URI.create("https://aidom.kr/errors/validation-failed"));
-    problemDetail.setTitle("입력값이 올바르지 않습니다");
+  @Override
+  protected ResponseEntity<Object> handleHandlerMethodValidationException(
+      HandlerMethodValidationException ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
 
-    // 비표준 커스텀 필드 추가 (errorCode, timestamp, errors 배열)
-    problemDetail.setProperty("errorCode", ErrorCode.INVALID_INPUT_VALUE.getCode());
-    problemDetail.setProperty("timestamp", Instant.now()); // ISO-8601 포맷(Z)
-    problemDetail.setProperty("errors", errors);
+    List<ValidationError> errors =
+        ex.getParameterValidationResults().stream()
+            .flatMap(
+                result ->
+                    result.getResolvableErrors().stream()
+                        .map(
+                            error ->
+                                new ValidationError(
+                                    result.getMethodParameter().getParameterName(),
+                                    error.getDefaultMessage())))
+            .toList();
 
-    return handleExceptionInternal(ex, problemDetail, headers, status, request);
+    return handleValidationException(ex, headers, status, request, errors);
+  }
+
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<Object> handleConstraintViolationException(
+      ConstraintViolationException ex, WebRequest request) {
+
+    List<ValidationError> errors =
+        ex.getConstraintViolations().stream()
+            .map(
+                violation ->
+                    new ValidationError(
+                        extractFieldName(violation.getPropertyPath().toString()),
+                        violation.getMessage()))
+            .toList();
+
+    return handleValidationException(
+        ex, new HttpHeaders(), HttpStatus.BAD_REQUEST, request, errors);
   }
 
   @ExceptionHandler(CustomException.class)
@@ -79,5 +107,28 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     problemDetail.setProperty("errorCode", ErrorCode.INTERNAL_SERVER_ERROR.getCode());
 
     return problemDetail;
+  }
+
+  private ResponseEntity<Object> handleValidationException(
+      Exception ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request,
+      List<ValidationError> errors) {
+
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(status, "요청 데이터에 유효하지 않은 값이 포함되어 있습니다.");
+    problemDetail.setType(URI.create("https://aidom.kr/errors/validation-failed"));
+    problemDetail.setTitle("입력값이 올바르지 않습니다");
+    problemDetail.setProperty("errorCode", ErrorCode.INVALID_INPUT_VALUE.getCode());
+    problemDetail.setProperty("timestamp", Instant.now());
+    problemDetail.setProperty("errors", errors);
+
+    return handleExceptionInternal(ex, problemDetail, headers, status, request);
+  }
+
+  private String extractFieldName(String propertyPath) {
+    int index = propertyPath.lastIndexOf('.');
+    return index >= 0 ? propertyPath.substring(index + 1) : propertyPath;
   }
 }
