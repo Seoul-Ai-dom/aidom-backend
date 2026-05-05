@@ -54,6 +54,9 @@ public class FacilityDocument {
   @Field(type = FieldType.Boolean)
   private boolean hasTemporaryCare;
 
+  @Field(type = FieldType.Boolean)
+  private boolean hasRegularProgram;
+
   @Field(type = FieldType.Float)
   private float avgRating;
 
@@ -71,6 +74,7 @@ public class FacilityDocument {
       boolean bookingRequired,
       boolean hasRegularCare,
       boolean hasTemporaryCare,
+      boolean hasRegularProgram,
       float avgRating) {
     this.id = id;
     this.facilityName = facilityName;
@@ -84,6 +88,7 @@ public class FacilityDocument {
     this.bookingRequired = bookingRequired;
     this.hasRegularCare = hasRegularCare;
     this.hasTemporaryCare = hasTemporaryCare;
+    this.hasRegularProgram = hasRegularProgram;
     this.avgRating = avgRating;
   }
 }

@@ -77,6 +77,7 @@ class FacilitySearchRepositoryIntegrationTest {
                 .bookingRequired(false)
                 .hasRegularCare(true)
                 .hasTemporaryCare(false)
+                .hasRegularProgram(true)
                 .avgRating(4.5f)
                 .build(),
             FacilityDocument.builder()
@@ -92,6 +93,7 @@ class FacilitySearchRepositoryIntegrationTest {
                 .bookingRequired(true)
                 .hasRegularCare(true)
                 .hasTemporaryCare(true)
+                .hasRegularProgram(true)
                 .avgRating(4.2f)
                 .build(),
             FacilityDocument.builder()
@@ -107,6 +109,7 @@ class FacilitySearchRepositoryIntegrationTest {
                 .bookingRequired(false)
                 .hasRegularCare(false)
                 .hasTemporaryCare(true)
+                .hasRegularProgram(false)
                 .avgRating(3.8f)
                 .build());
 
@@ -207,5 +210,207 @@ class FacilitySearchRepositoryIntegrationTest {
     assertThat(results.getContent())
         .extracting(FacilityDocument::getId)
         .containsExactlyInAnyOrder("FAC002", "FAC003");
+  }
+
+  @Test
+  @DisplayName("searchWithFilters - districtName 필터로 해당 구의 시설만 반환된다")
+  void searchWithFilters_districtName() {
+    Page<FacilityDocument> results =
+        facilitySearchRepository.searchWithFilters(
+            "강남구", null, null, null, null, null, null, null, null, null, PageRequest.of(0, 10));
+
+    assertThat(results.getContent()).hasSize(2);
+    assertThat(results.getContent())
+        .extracting(FacilityDocument::getId)
+        .containsExactlyInAnyOrder("FAC001", "FAC003");
+  }
+
+  @Test
+  @DisplayName("searchWithFilters - serviceType 필터로 해당 유형만 반환된다")
+  void searchWithFilters_serviceType() {
+    Page<FacilityDocument> results =
+        facilitySearchRepository.searchWithFilters(
+            null, "지역아동센터", null, null, null, null, null, null, null, null, PageRequest.of(0, 10));
+
+    assertThat(results.getContent()).hasSize(2);
+    assertThat(results.getContent())
+        .extracting(FacilityDocument::getId)
+        .containsExactlyInAnyOrder("FAC002", "FAC003");
+  }
+
+  @Test
+  @DisplayName("searchWithFilters - isFree 필터로 무료 시설만 반환된다")
+  void searchWithFilters_isFree() {
+    Page<FacilityDocument> results =
+        facilitySearchRepository.searchWithFilters(
+            null, null, true, null, null, null, null, null, null, null, PageRequest.of(0, 10));
+
+    assertThat(results.getContent()).hasSize(2);
+    assertThat(results.getContent())
+        .extracting(FacilityDocument::getId)
+        .containsExactlyInAnyOrder("FAC001", "FAC003");
+  }
+
+  @Test
+  @DisplayName("searchWithFilters - 여러 필터 조합으로 조회한다")
+  void searchWithFilters_combined() {
+    Page<FacilityDocument> results =
+        facilitySearchRepository.searchWithFilters(
+            "강남구", null, true, null, null, null, null, null, null, null, PageRequest.of(0, 10));
+
+    assertThat(results.getContent()).hasSize(2);
+    assertThat(results.getContent())
+        .extracting(FacilityDocument::getId)
+        .containsExactlyInAnyOrder("FAC001", "FAC003");
+  }
+
+  @Test
+  @DisplayName("searchWithFilters - 연령 범위 필터로 해당 연령을 포함하는 시설만 반환된다")
+  void searchWithFilters_ageRange() {
+    // ageMin=4 이면 시설의 ageMax >= 4인 것만, ageMax=10 이면 시설의 ageMin <= 10인 것만
+    Page<FacilityDocument> results =
+        facilitySearchRepository.searchWithFilters(
+            null, null, null, 4, 5, null, null, null, null, null, PageRequest.of(0, 10));
+
+    // FAC001: 3~12 (포함), FAC002: 5~15 (포함), FAC003: 6~13 (ageMin=6 > ageMax=5 → 제외)
+    assertThat(results.getContent()).hasSize(2);
+    assertThat(results.getContent())
+        .extracting(FacilityDocument::getId)
+        .containsExactlyInAnyOrder("FAC001", "FAC002");
+  }
+
+  @Test
+  @DisplayName("searchNearby - 위치 기반으로 가까운 시설을 반환한다")
+  void searchNearby_returnsNearbyFacilities() {
+    // 강남역 근처 좌표, 반경 20km (모든 시설 포함할 수 있는 범위)
+    List<FacilityDocument> results =
+        facilitySearchRepository.searchNearby(37.5665, 126.978, 20.0, 10);
+
+    assertThat(results).isNotEmpty();
+    assertThat(results).hasSizeLessThanOrEqualTo(10);
+  }
+
+  @Test
+  @DisplayName("searchNearby - 좁은 반경에서는 가까운 시설만 반환된다")
+  void searchNearby_narrowRadius() {
+    // FAC001 좌표와 동일한 지점에서 검색, 0.1km 반경
+    List<FacilityDocument> results =
+        facilitySearchRepository.searchNearby(37.5665, 126.978, 0.1, 10);
+
+    // 0.1km 반경이므로 FAC001(동일 좌표)만 정확히 1건 반환
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).getId()).isEqualTo("FAC001");
+  }
+
+  @Test
+  @DisplayName("recommendByChildAge - 해당 나이를 포함하는 시설을 추천한다")
+  void recommendByChildAge_returnsMatchingFacilities() {
+    // 7세 아이 → FAC001(3~12), FAC002(5~15), FAC003(6~13) 모두 매칭
+    List<FacilityDocument> results =
+        facilitySearchRepository.recommendByChildAge(7, null, null, 10);
+
+    assertThat(results).hasSize(3);
+  }
+
+  @Test
+  @DisplayName("recommendByChildAge - 범위 밖 나이면 빈 결과를 반환한다")
+  void recommendByChildAge_noMatch() {
+    // 20세 → 모든 시설의 ageMax보다 큼
+    List<FacilityDocument> results =
+        facilitySearchRepository.recommendByChildAge(20, null, null, 10);
+
+    assertThat(results).isEmpty();
+  }
+
+  @Test
+  @DisplayName("recommendByChildAge - 위치 기반 decay가 적용된다")
+  void recommendByChildAge_withLocation() {
+    List<FacilityDocument> results =
+        facilitySearchRepository.recommendByChildAge(7, 37.5665, 126.978, 10);
+
+    assertThat(results).isNotEmpty();
+  }
+
+  @Test
+  @DisplayName("searchWithFilters - careType=TEMPORARY 필터로 임시돌봄 가능 시설만 반환된다")
+  void searchWithFilters_careTypeTemporary() {
+    // FAC002: hasTemporaryCare=true, FAC003: hasTemporaryCare=true
+    Page<FacilityDocument> results =
+        facilitySearchRepository.searchWithFilters(
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "TEMPORARY",
+            null,
+            PageRequest.of(0, 10));
+
+    assertThat(results.getContent()).hasSize(2);
+    assertThat(results.getContent())
+        .extracting(FacilityDocument::getId)
+        .containsExactlyInAnyOrder("FAC002", "FAC003");
+  }
+
+  @Test
+  @DisplayName("searchWithFilters - careType=REGULAR 필터로 정규돌봄 가능 시설만 반환된다")
+  void searchWithFilters_careTypeRegular() {
+    // FAC001: hasRegularCare=true, FAC002: hasRegularCare=true
+    Page<FacilityDocument> results =
+        facilitySearchRepository.searchWithFilters(
+            null, null, null, null, null, null, null, null, "REGULAR", null, PageRequest.of(0, 10));
+
+    assertThat(results.getContent()).hasSize(2);
+    assertThat(results.getContent())
+        .extracting(FacilityDocument::getId)
+        .containsExactlyInAnyOrder("FAC001", "FAC002");
+  }
+
+  @Test
+  @DisplayName("searchWithFilters - hasRegularProgram=true 필터로 정규프로그램 시설만 반환된다")
+  void searchWithFilters_hasRegularProgramTrue() {
+    // FAC001: hasRegularProgram=true, FAC002: hasRegularProgram=true
+    Page<FacilityDocument> results =
+        facilitySearchRepository.searchWithFilters(
+            null, null, null, null, null, null, null, null, null, true, PageRequest.of(0, 10));
+
+    assertThat(results.getContent()).hasSize(2);
+    assertThat(results.getContent())
+        .extracting(FacilityDocument::getId)
+        .containsExactlyInAnyOrder("FAC001", "FAC002");
+  }
+
+  @Test
+  @DisplayName("searchWithFilters - hasRegularProgram=false 필터로 정규프로그램 없는 시설만 반환된다")
+  void searchWithFilters_hasRegularProgramFalse() {
+    // FAC003: hasRegularProgram=false
+    Page<FacilityDocument> results =
+        facilitySearchRepository.searchWithFilters(
+            null, null, null, null, null, null, null, null, null, false, PageRequest.of(0, 10));
+
+    assertThat(results.getContent()).hasSize(1);
+    assertThat(results.getContent().get(0).getId()).isEqualTo("FAC003");
+  }
+
+  @Test
+  @DisplayName("recommendByChildAge - 평점이 높은 시설이 먼저 추천된다")
+  void recommendByChildAge_orderedByRating() {
+    // 7세: 3개 모두 매칭, avgRating: FAC001=4.5 > FAC002=4.2 > FAC003=3.8
+    List<FacilityDocument> results =
+        facilitySearchRepository.recommendByChildAge(7, null, null, 10);
+
+    assertThat(results).hasSize(3);
+    assertThat(results.get(0).getId()).isEqualTo("FAC001");
+  }
+
+  @Test
+  @DisplayName("getDistinctDistrictNames - 고유한 자치구명 목록을 반환한다")
+  void getDistinctDistrictNames() {
+    List<String> districts = facilitySearchRepository.getDistinctDistrictNames();
+
+    assertThat(districts).containsExactlyInAnyOrder("강남구", "서초구");
   }
 }

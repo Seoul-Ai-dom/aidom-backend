@@ -27,7 +27,7 @@ public class Facility {
   @Column(name = "facility_name", nullable = false)
   private String facilityName;
 
-  @Column(name = "service_type_code", nullable = false, length = 20)
+  @Column(name = "service_type_code", nullable = false, length = 30)
   private String serviceTypeCode;
 
   @Column(name = "service_type", nullable = false)
