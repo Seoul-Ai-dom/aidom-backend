@@ -46,7 +46,9 @@ public enum ErrorCode {
   // Visit
   VISIT_NOT_FOUND(HttpStatus.NOT_FOUND, "T001", "이용 내역을 찾을 수 없습니다."),
   VISIT_ALREADY_CANCELLED(HttpStatus.UNPROCESSABLE_ENTITY, "T002", "이미 취소된 이용 내역입니다."),
-  VISIT_ALREADY_CONFIRMED(HttpStatus.UNPROCESSABLE_ENTITY, "T003", "이미 확정된 이용 내역입니다.");
+  VISIT_ALREADY_CONFIRMED(HttpStatus.UNPROCESSABLE_ENTITY, "T003", "이미 확정된 이용 내역입니다."),
+  VISIT_NOT_EDITABLE(HttpStatus.UNPROCESSABLE_ENTITY, "T004", "수정할 수 없는 이용 내역입니다."),
+  INVALID_VISIT_TIME_RANGE(HttpStatus.UNPROCESSABLE_ENTITY, "T005", "이용 종료 시간은 시작 시간보다 빠를 수 없습니다.");
 
   private final HttpStatus httpStatus;
   private final String code;
