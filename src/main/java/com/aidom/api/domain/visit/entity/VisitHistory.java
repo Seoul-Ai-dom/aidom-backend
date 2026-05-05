@@ -74,6 +74,18 @@ public class VisitHistory extends BaseEntity {
     this.endTime = endTime;
   }
 
+  public void updateSchedule(LocalDate visitDate, LocalTime startTime, LocalTime endTime) {
+    if (visitDate != null) {
+      this.visitDate = visitDate;
+    }
+    if (startTime != null) {
+      this.startTime = startTime;
+    }
+    if (endTime != null) {
+      this.endTime = endTime;
+    }
+  }
+
   public void confirm(LocalDate visitDate, LocalTime startTime, LocalTime endTime) {
     if (this.status == VisitStatus.CONFIRMED) {
       throw new IllegalStateException("이미 확정된 이용 내역입니다.");
