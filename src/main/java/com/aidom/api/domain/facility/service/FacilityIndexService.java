@@ -18,9 +18,9 @@ import org.springframework.stereotype.Service;
     matchIfMissing = false)
 public class FacilityIndexService {
 
+  private final FacilityRepository facilityRepository;
   private final FacilitySearchRepository facilitySearchRepository;
   private final FacilitySearchIndexManager facilitySearchIndexManager;
-  private final FacilityRepository facilityRepository;
 
   public void index(Facility facility) {
     FacilityDocument document = FacilityDocumentMapper.toDocument(facility);
@@ -37,17 +37,25 @@ public class FacilityIndexService {
     facilitySearchRepository.deleteById(facilityId);
   }
 
+  public int syncIfEmpty() {
+    if (facilitySearchRepository.count() > 0) {
+      return 0;
+    }
+
+    return reindexAll();
+  }
+
   public int reindexAll() {
-    List<Facility> facilities = facilityRepository.findAll();
-    List<FacilityDocument> documents =
-        facilities.stream().map(FacilityDocumentMapper::toDocument).toList();
-    facilitySearchIndexManager.rebuildIndex(documents);
-    return documents.size();
+    List<Facility> facilities = facilityRepository.findAllWithStats();
+    reindexAll(facilities);
+    return facilities.size();
   }
 
   public void reindexAll(List<Facility> facilities) {
-    List<FacilityDocument> documents =
-        facilities.stream().map(FacilityDocumentMapper::toDocument).toList();
-    facilitySearchIndexManager.rebuildIndex(documents);
+    facilitySearchIndexManager.rebuildIndex(toDocuments(facilities));
+  }
+
+  private List<FacilityDocument> toDocuments(List<Facility> facilities) {
+    return facilities.stream().map(FacilityDocumentMapper::toDocument).toList();
   }
 }

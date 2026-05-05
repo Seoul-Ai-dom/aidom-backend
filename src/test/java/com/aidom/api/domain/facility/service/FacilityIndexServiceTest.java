@@ -1,13 +1,17 @@
 package com.aidom.api.domain.facility.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.aidom.api.domain.facility.document.FacilityDocument;
 import com.aidom.api.domain.facility.entity.Facility;
 import com.aidom.api.domain.facility.enums.ServiceType;
+import com.aidom.api.domain.facility.repository.FacilityRepository;
 import com.aidom.api.domain.facility.repository.FacilitySearchRepository;
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class FacilityIndexServiceTest {
 
+  @Mock private FacilityRepository facilityRepository;
   @Mock private FacilitySearchRepository facilitySearchRepository;
   @Mock private FacilitySearchIndexManager facilitySearchIndexManager;
 
@@ -62,6 +67,45 @@ class FacilityIndexServiceTest {
     facilityIndexService.reindexAll(facilities);
 
     verify(facilitySearchIndexManager).rebuildIndex(anyList());
+  }
+
+  @Test
+  @DisplayName("DB 기준 전체 재색인 시 stats를 함께 조회해 재색인한다")
+  void reindexAll_loadsFacilitiesWithStats() {
+    List<Facility> facilities = List.of(createFacility("FAC001"), createFacility("FAC002"));
+    when(facilityRepository.findAllWithStats()).thenReturn(facilities);
+
+    int count = facilityIndexService.reindexAll();
+
+    verify(facilityRepository).findAllWithStats();
+    verify(facilitySearchIndexManager).rebuildIndex(anyList());
+    assertThat(count).isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("시작 시 ES에 문서가 있으면 DB 재색인을 건너뛴다")
+  void syncIfEmpty_skipsWhenIndexAlreadyHasDocuments() {
+    when(facilitySearchRepository.count()).thenReturn(1L);
+
+    int count = facilityIndexService.syncIfEmpty();
+
+    verify(facilityRepository, never()).findAllWithStats();
+    verify(facilitySearchIndexManager, never()).rebuildIndex(anyList());
+    assertThat(count).isZero();
+  }
+
+  @Test
+  @DisplayName("시작 시 ES가 비어 있으면 DB 기준 전체 재색인을 수행한다")
+  void syncIfEmpty_reindexesWhenIndexIsEmpty() {
+    List<Facility> facilities = List.of(createFacility("FAC001"));
+    when(facilitySearchRepository.count()).thenReturn(0L);
+    when(facilityRepository.findAllWithStats()).thenReturn(facilities);
+
+    int count = facilityIndexService.syncIfEmpty();
+
+    verify(facilityRepository).findAllWithStats();
+    verify(facilitySearchIndexManager).rebuildIndex(anyList());
+    assertThat(count).isEqualTo(1);
   }
 
   private Facility createFacility(String id) {

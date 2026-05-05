@@ -5,8 +5,6 @@ import static com.aidom.api.global.config.ElasticsearchIndexConstants.FACILITY_I
 import static com.aidom.api.global.config.ElasticsearchIndexConstants.FACILITY_PRIMARY_INDEX;
 
 import com.aidom.api.domain.facility.document.FacilityDocument;
-import com.aidom.api.domain.facility.document.FacilityDocumentMapper;
-import com.aidom.api.domain.facility.repository.FacilityRepository;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -16,9 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.elasticsearch.ResourceNotFoundException;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -29,50 +24,19 @@ import org.springframework.data.elasticsearch.core.index.AliasActions;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(
     name = "spring.data.elasticsearch.repositories.enabled",
     havingValue = "true",
     matchIfMissing = false)
-public class FacilitySearchIndexManager implements ApplicationRunner {
+public class FacilitySearchIndexManager {
 
   private static final DateTimeFormatter REINDEX_SUFFIX_FORMATTER =
       DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
   private final ElasticsearchOperations operations;
-  private final FacilityRepository facilityRepository;
   private final Clock clock;
-
-  @Override
-  public void run(ApplicationArguments args) {
-    initializeIndex();
-    syncIfEmpty();
-  }
-
-  private void syncIfEmpty() {
-    long count =
-        operations.count(
-            new org.springframework.data.elasticsearch.core.query.CriteriaQuery(
-                org.springframework.data.elasticsearch.core.query.Criteria.where("_id").exists()),
-            IndexCoordinates.of(FACILITY_INDEX_ALIAS));
-
-    if (count > 0) {
-      return;
-    }
-
-    var facilities = facilityRepository.findAll();
-    if (facilities.isEmpty()) {
-      return;
-    }
-
-    log.info("ES index is empty, syncing {} facilities from DB", facilities.size());
-    List<FacilityDocument> documents =
-        facilities.stream().map(FacilityDocumentMapper::toDocument).toList();
-    rebuildIndex(documents);
-    log.info("ES sync complete: {} documents indexed", documents.size());
-  }
 
   public void initializeIndex() {
     ensureIndexExists(FACILITY_PRIMARY_INDEX);
