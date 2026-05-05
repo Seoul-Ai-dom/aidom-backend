@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.elasticsearch.ResourceNotFoundException;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -32,18 +30,13 @@ import org.springframework.stereotype.Component;
     name = "spring.data.elasticsearch.repositories.enabled",
     havingValue = "true",
     matchIfMissing = false)
-public class FacilitySearchIndexManager implements ApplicationRunner {
+public class FacilitySearchIndexManager {
 
   private static final DateTimeFormatter REINDEX_SUFFIX_FORMATTER =
       DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
   private final ElasticsearchOperations operations;
   private final Clock clock;
-
-  @Override
-  public void run(ApplicationArguments args) {
-    initializeIndex();
-  }
 
   public void initializeIndex() {
     ensureIndexExists(FACILITY_PRIMARY_INDEX);

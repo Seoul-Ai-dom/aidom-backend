@@ -3,6 +3,7 @@ package com.aidom.api.domain.facility.service;
 import com.aidom.api.domain.facility.document.FacilityDocument;
 import com.aidom.api.domain.facility.document.FacilityDocumentMapper;
 import com.aidom.api.domain.facility.entity.Facility;
+import com.aidom.api.domain.facility.repository.FacilityRepository;
 import com.aidom.api.domain.facility.repository.FacilitySearchRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
     matchIfMissing = false)
 public class FacilityIndexService {
 
+  private final FacilityRepository facilityRepository;
   private final FacilitySearchRepository facilitySearchRepository;
   private final FacilitySearchIndexManager facilitySearchIndexManager;
 
@@ -35,9 +37,25 @@ public class FacilityIndexService {
     facilitySearchRepository.deleteById(facilityId);
   }
 
+  public int syncIfEmpty() {
+    if (facilitySearchRepository.count() > 0) {
+      return 0;
+    }
+
+    return reindexAll();
+  }
+
+  public int reindexAll() {
+    List<Facility> facilities = facilityRepository.findAllWithStats();
+    reindexAll(facilities);
+    return facilities.size();
+  }
+
   public void reindexAll(List<Facility> facilities) {
-    List<FacilityDocument> documents =
-        facilities.stream().map(FacilityDocumentMapper::toDocument).toList();
-    facilitySearchIndexManager.rebuildIndex(documents);
+    facilitySearchIndexManager.rebuildIndex(toDocuments(facilities));
+  }
+
+  private List<FacilityDocument> toDocuments(List<Facility> facilities) {
+    return facilities.stream().map(FacilityDocumentMapper::toDocument).toList();
   }
 }
