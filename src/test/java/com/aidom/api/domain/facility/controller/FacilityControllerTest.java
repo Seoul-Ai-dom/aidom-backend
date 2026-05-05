@@ -16,12 +16,16 @@ import com.aidom.api.domain.facility.dto.FacilitySearchResponse;
 import com.aidom.api.domain.facility.service.FacilityService;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
+import com.aidom.api.support.WebMvcTestSecurityConfig;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +34,14 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(FacilityController.class)
+@WebMvcTest(
+    controllers = FacilityController.class,
+    excludeFilters =
+        @ComponentScan.Filter(
+            type = FilterType.REGEX,
+            pattern =
+                ".*ElasticsearchConfig.*|.*SecurityConfig.*|.*JwtAuthentication.*|.*OAuth2.*|.*ProblemDetail.*"))
+@Import(WebMvcTestSecurityConfig.class)
 @ActiveProfiles("test")
 @TestPropertySource(properties = "spring.data.elasticsearch.repositories.enabled=true")
 class FacilityControllerTest {
