@@ -35,7 +35,12 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(FacilityController.class)
 @Import(SecurityConfig.class)
 @ActiveProfiles("test")
-@TestPropertySource(properties = "spring.data.elasticsearch.repositories.enabled=true")
+@TestPropertySource(
+    properties = {
+      "spring.data.elasticsearch.repositories.enabled=true",
+      "aidom.admin.username=test-admin",
+      "aidom.admin.password={noop}test-admin"
+    })
 class FacilityControllerTest {
 
   @Autowired private MockMvc mockMvc;
