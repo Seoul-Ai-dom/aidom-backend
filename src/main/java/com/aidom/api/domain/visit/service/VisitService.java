@@ -6,7 +6,11 @@ import com.aidom.api.domain.user.entity.Child;
 import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.domain.user.repository.ChildRepository;
 import com.aidom.api.domain.user.repository.UserRepository;
-import com.aidom.api.domain.visit.dto.*;
+import com.aidom.api.domain.visit.dto.VisitConfirmRequest;
+import com.aidom.api.domain.visit.dto.VisitCreateRequest;
+import com.aidom.api.domain.visit.dto.VisitResponse;
+import com.aidom.api.domain.visit.dto.VisitSummaryResponse;
+import com.aidom.api.domain.visit.dto.VisitUpdateRequest;
 import com.aidom.api.domain.visit.entity.VisitHistory;
 import com.aidom.api.domain.visit.enums.VisitStatus;
 import com.aidom.api.domain.visit.repository.VisitHistoryRepository;
@@ -14,6 +18,7 @@ import com.aidom.api.global.common.dto.SliceResponse;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -39,7 +44,13 @@ public class VisitService {
     Pageable pageable = PageRequest.of(page, size);
     Slice<VisitHistory> slice;
 
-    if (yearMonth != null) {
+    if (yearMonth != null && status != null) {
+      LocalDate startDate = yearMonth.atDay(1);
+      LocalDate endDate = yearMonth.atEndOfMonth();
+      slice =
+          visitHistoryRepository.findByUserIdAndVisitDateBetweenAndStatusWithDetails(
+              userId, startDate, endDate, status, pageable);
+    } else if (yearMonth != null) {
       LocalDate startDate = yearMonth.atDay(1);
       LocalDate endDate = yearMonth.atEndOfMonth();
       slice =
@@ -94,7 +105,13 @@ public class VisitService {
   @Transactional
   public VisitResponse updateVisit(Long userId, Long visitId, VisitUpdateRequest request) {
     VisitHistory visit = getVisitWithOwnerCheck(userId, visitId);
-    visit.updateSchedule(request.visitDate(), request.startTime(), request.endTime());
+    try {
+      visit.updateSchedule(request.visitDate(), request.startTime(), request.endTime());
+    } catch (IllegalArgumentException e) {
+      throw new CustomException(ErrorCode.INVALID_VISIT_TIME_RANGE);
+    } catch (IllegalStateException e) {
+      throw new CustomException(ErrorCode.VISIT_NOT_EDITABLE);
+    }
     return toVisitResponse(visit);
   }
 
@@ -112,13 +129,18 @@ public class VisitService {
   @Transactional
   public VisitResponse confirmVisit(Long userId, Long visitId, VisitConfirmRequest request) {
     VisitHistory visit = getVisitWithOwnerCheck(userId, visitId);
+
+    if (visit.getStatus() == VisitStatus.CONFIRMED) {
+      throw new CustomException(ErrorCode.VISIT_ALREADY_CONFIRMED);
+    }
+    if (visit.getStatus() == VisitStatus.CANCELLED) {
+      throw new CustomException(ErrorCode.VISIT_ALREADY_CANCELLED);
+    }
+
     try {
       visit.confirm(request.visitDate(), request.startTime(), request.endTime());
-    } catch (IllegalStateException e) {
-      if (e.getMessage().contains("이미 확정")) {
-        throw new CustomException(ErrorCode.VISIT_ALREADY_CONFIRMED);
-      }
-      throw new CustomException(ErrorCode.VISIT_ALREADY_CANCELLED);
+    } catch (IllegalArgumentException e) {
+      throw new CustomException(ErrorCode.INVALID_VISIT_TIME_RANGE);
     }
     return toVisitResponse(visit);
   }
@@ -145,11 +167,6 @@ public class VisitService {
   }
 
   private VisitResponse toVisitResponse(VisitHistory visit) {
-    Long durationMinutes = null;
-    if (visit.getStartTime() != null && visit.getEndTime() != null) {
-      durationMinutes = ChronoUnit.MINUTES.between(visit.getStartTime(), visit.getEndTime());
-    }
-
     return new VisitResponse(
         visit.getId(),
         visit.getFacility().getId(),
@@ -161,10 +178,17 @@ public class VisitService {
         visit.getVisitDate(),
         visit.getStartTime(),
         visit.getEndTime(),
-        durationMinutes,
+        calculateDurationMinutes(visit.getStartTime(), visit.getEndTime()),
         visit.getConfirmedAt(),
         visit.getCancelledAt(),
         visit.getCreatedAt());
+  }
+
+  private Long calculateDurationMinutes(LocalTime startTime, LocalTime endTime) {
+    if (startTime == null || endTime == null || endTime.isBefore(startTime)) {
+      return null;
+    }
+    return ChronoUnit.MINUTES.between(startTime, endTime);
   }
 
   private VisitSummaryResponse toVisitSummaryResponse(VisitHistory visit) {

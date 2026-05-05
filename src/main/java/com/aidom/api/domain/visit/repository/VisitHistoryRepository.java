@@ -43,6 +43,19 @@ public interface VisitHistoryRepository extends JpaRepository<VisitHistory, Long
 
   @Query(
       "SELECT v FROM VisitHistory v JOIN FETCH v.facility JOIN FETCH v.child"
+          + " WHERE v.user.id = :userId"
+          + " AND v.visitDate BETWEEN :startDate AND :endDate"
+          + " AND v.status = :status"
+          + " ORDER BY v.visitDate DESC")
+  Slice<VisitHistory> findByUserIdAndVisitDateBetweenAndStatusWithDetails(
+      @Param("userId") Long userId,
+      @Param("startDate") LocalDate startDate,
+      @Param("endDate") LocalDate endDate,
+      @Param("status") VisitStatus status,
+      Pageable pageable);
+
+  @Query(
+      "SELECT v FROM VisitHistory v JOIN FETCH v.facility JOIN FETCH v.child"
           + " WHERE v.user.id = :userId AND v.status IN :statuses"
           + " ORDER BY v.createdAt DESC")
   Slice<VisitHistory> findByUserIdAndStatusInWithDetails(

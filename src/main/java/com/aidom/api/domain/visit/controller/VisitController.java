@@ -1,6 +1,10 @@
 package com.aidom.api.domain.visit.controller;
 
-import com.aidom.api.domain.visit.dto.*;
+import com.aidom.api.domain.visit.dto.VisitConfirmRequest;
+import com.aidom.api.domain.visit.dto.VisitCreateRequest;
+import com.aidom.api.domain.visit.dto.VisitResponse;
+import com.aidom.api.domain.visit.dto.VisitSummaryResponse;
+import com.aidom.api.domain.visit.dto.VisitUpdateRequest;
 import com.aidom.api.domain.visit.enums.VisitStatus;
 import com.aidom.api.domain.visit.service.VisitService;
 import com.aidom.api.global.common.dto.SliceResponse;
@@ -16,7 +20,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "이용내역 Visits", description = "시설 이용내역 관리 API")
 @RestController
@@ -27,7 +38,7 @@ public class VisitController {
 
   @Operation(
       summary = "내 이용내역 목록 조회",
-      description = "로그인 사용자의 이용내역을 무한스크롤로 조회합니다. yearMonth를 지정하면 해당 월의 내역만 반환합니다.")
+      description = "로그인 사용자의 이용내역을 무한스크롤로 조회합니다. yearMonth와 status를 함께 전달하면 해당 월·상태 조건을 모두 적용합니다.")
   @ApiResponse(responseCode = "200", description = "조회 성공")
   @GetMapping("/api/v1/users/me/visits")
   public ResponseEntity<SliceResponse<VisitResponse>> getMyVisits(

@@ -28,6 +28,8 @@ import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -117,6 +121,39 @@ class VisitServiceTest {
   }
 
   @Test
+  @DisplayName("이용내역 수정 - 확정된 내역은 수정할 수 없다")
+  void updateVisit_confirmedVisit_throwsNotEditable() {
+    Long userId = 1L;
+    VisitHistory visit = createVisitHistory(userId);
+    visit.confirm(LocalDate.of(2025, 6, 1), LocalTime.of(9, 0), LocalTime.of(13, 0));
+    VisitUpdateRequest request =
+        new VisitUpdateRequest(LocalDate.of(2025, 7, 1), LocalTime.of(10, 0), LocalTime.of(14, 0));
+
+    given(visitHistoryRepository.findById(1L)).willReturn(Optional.of(visit));
+
+    assertThatThrownBy(() -> visitService.updateVisit(userId, 1L, request))
+        .isInstanceOf(CustomException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.VISIT_NOT_EDITABLE);
+  }
+
+  @Test
+  @DisplayName("이용내역 수정 - 종료 시간이 시작 시간보다 빠르면 예외")
+  void updateVisit_invalidTimeRange_throwsException() {
+    Long userId = 1L;
+    VisitHistory visit = createVisitHistory(userId);
+    VisitUpdateRequest request =
+        new VisitUpdateRequest(LocalDate.of(2025, 7, 1), LocalTime.of(14, 0), LocalTime.of(10, 0));
+
+    given(visitHistoryRepository.findById(1L)).willReturn(Optional.of(visit));
+
+    assertThatThrownBy(() -> visitService.updateVisit(userId, 1L, request))
+        .isInstanceOf(CustomException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.INVALID_VISIT_TIME_RANGE);
+  }
+
+  @Test
   @DisplayName("이용내역 취소 - 성공")
   void cancelVisit_success() {
     Long userId = 1L;
@@ -175,6 +212,45 @@ class VisitServiceTest {
         .isInstanceOf(CustomException.class)
         .extracting("errorCode")
         .isEqualTo(ErrorCode.VISIT_ALREADY_CONFIRMED);
+  }
+
+  @Test
+  @DisplayName("이용내역 확정 - 종료 시간이 시작 시간보다 빠르면 예외")
+  void confirmVisit_invalidTimeRange_throwsException() {
+    Long userId = 1L;
+    VisitHistory visit = createVisitHistory(userId);
+    VisitConfirmRequest request =
+        new VisitConfirmRequest(LocalDate.of(2025, 6, 1), LocalTime.of(13, 0), LocalTime.of(9, 0));
+
+    given(visitHistoryRepository.findById(1L)).willReturn(Optional.of(visit));
+
+    assertThatThrownBy(() -> visitService.confirmVisit(userId, 1L, request))
+        .isInstanceOf(CustomException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.INVALID_VISIT_TIME_RANGE);
+  }
+
+  @Test
+  @DisplayName("이용내역 목록 조회 - yearMonth와 status를 함께 전달하면 교집합 조건으로 조회한다")
+  void getMyVisits_withYearMonthAndStatus_usesIntersectionFilter() {
+    Long userId = 1L;
+    VisitHistory visit = createVisitHistory(userId);
+    SliceImpl<VisitHistory> slice = new SliceImpl<>(List.of(visit), PageRequest.of(0, 20), false);
+
+    given(
+            visitHistoryRepository.findByUserIdAndVisitDateBetweenAndStatusWithDetails(
+                userId,
+                LocalDate.of(2025, 6, 1),
+                LocalDate.of(2025, 6, 30),
+                VisitStatus.PLANNED,
+                PageRequest.of(0, 20)))
+        .willReturn(slice);
+
+    var result =
+        visitService.getMyVisits(userId, 0, 20, VisitStatus.PLANNED, YearMonth.of(2025, 6));
+
+    assertThat(result.content()).hasSize(1);
+    assertThat(result.content().get(0).status()).isEqualTo(VisitStatus.PLANNED);
   }
 
   private User createUser() {
