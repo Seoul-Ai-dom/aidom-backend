@@ -80,6 +80,16 @@ class FacilityControllerTest {
   }
 
   @Test
+  @DisplayName("GET /api/v1/facilities - 음수 페이지 번호는 400")
+  void getFacilities_invalidPage() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/facilities").param("page", "-1"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+        .andExpect(jsonPath("$.errors[0].field").value("page"));
+  }
+
+  @Test
   @DisplayName("GET /api/v1/facilities/search - 시설 검색")
   void searchFacilities() throws Exception {
     FacilitySearchResponse response =
@@ -99,6 +109,16 @@ class FacilityControllerTest {
         .perform(get("/api/v1/facilities/search").param("keyword", "키움"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].id").value("FAC001"));
+  }
+
+  @Test
+  @DisplayName("GET /api/v1/facilities/search - 0 이하 페이지 크기는 400")
+  void searchFacilities_invalidSize() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/facilities/search").param("keyword", "키움").param("size", "0"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+        .andExpect(jsonPath("$.errors[0].field").value("size"));
   }
 
   @Test
@@ -182,6 +202,16 @@ class FacilityControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value("FAC001"))
         .andExpect(jsonPath("$[0].recommendReason").exists());
+  }
+
+  @Test
+  @DisplayName("GET /api/v1/facilities/recommend - 0 이하 limit은 400")
+  void recommendFacilities_invalidLimit() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/facilities/recommend").param("childId", "1").param("limit", "0"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorCode").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+        .andExpect(jsonPath("$.errors[0].field").value("limit"));
   }
 
   @Test
