@@ -117,6 +117,25 @@ public class User extends BaseEntity {
     this.addressLng = addressLng;
   }
 
+  public void applyProvisionedProfile(ProvisionedProfile profile) {
+    this.name = profile.name();
+    this.email = profile.email();
+    this.provider = profile.provider();
+    this.providerId = profile.providerId();
+    this.role = profile.role();
+    this.status = profile.status();
+    this.relation = profile.relation();
+    this.birthDate = profile.birthDate();
+    this.phone = profile.phone();
+    this.address = profile.address();
+    this.city = profile.city();
+    this.district = profile.district();
+    this.addressDetail = profile.addressDetail();
+    this.addressLat = profile.addressLat();
+    this.addressLng = profile.addressLng();
+    this.deletedAt = null;
+  }
+
   public void updateSocialProfile(String name, String email) {
     if (name != null && !name.isBlank()) {
       this.name = name.trim();
