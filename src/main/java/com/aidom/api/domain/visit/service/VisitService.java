@@ -92,6 +92,9 @@ public class VisitService {
             .facility(facility)
             .status(VisitStatus.PLANNED)
             .source(request.source())
+            .visitDate(request.visitDate())
+            .startTime(request.startTime())
+            .endTime(request.endTime())
             .build();
 
     return toVisitResponse(visitHistoryRepository.save(visitHistory));

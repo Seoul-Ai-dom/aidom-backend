@@ -90,7 +90,8 @@ class VisitControllerTest {
   @Test
   @DisplayName("이용내역 등록 - 정상 요청 시 201")
   void createVisit_validRequest_returns201() throws Exception {
-    VisitCreateRequest request = new VisitCreateRequest("FAC001", 1L, VisitSource.MANUAL);
+    VisitCreateRequest request =
+        new VisitCreateRequest("FAC001", 1L, VisitSource.MANUAL, null, null, null);
     given(visitService.createVisit(anyLong(), any(VisitCreateRequest.class)))
         .willReturn(sampleVisitResponse());
 
