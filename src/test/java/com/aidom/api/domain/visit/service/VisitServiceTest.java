@@ -58,7 +58,8 @@ class VisitServiceTest {
     User user = createUser();
     Child child = createChild(user);
     Facility facility = createFacility("FAC001");
-    VisitCreateRequest request = new VisitCreateRequest("FAC001", 1L, VisitSource.MANUAL);
+    VisitCreateRequest request =
+        new VisitCreateRequest("FAC001", 1L, VisitSource.MANUAL, null, null, null);
 
     given(userRepository.findById(userId)).willReturn(Optional.of(user));
     given(childRepository.findById(1L)).willReturn(Optional.of(child));
@@ -79,7 +80,8 @@ class VisitServiceTest {
     User user = createUser();
     User otherUser = createOtherUser();
     Child otherChild = createChild(otherUser);
-    VisitCreateRequest request = new VisitCreateRequest("FAC001", 2L, VisitSource.MANUAL);
+    VisitCreateRequest request =
+        new VisitCreateRequest("FAC001", 2L, VisitSource.MANUAL, null, null, null);
 
     given(userRepository.findById(userId)).willReturn(Optional.of(user));
     given(childRepository.findById(2L)).willReturn(Optional.of(otherChild));
