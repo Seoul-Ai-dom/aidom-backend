@@ -259,8 +259,7 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
                           // 4. 무료 시설 가산점 (신규)
                           fs.functions(
                               fn ->
-                                  fn.filter(
-                                          f -> f.term(t -> t.field("isFree").value(true)))
+                                  fn.filter(f -> f.term(t -> t.field("isFree").value(true)))
                                       .weight(1.5));
 
                           // 5. 거리 감쇠 (기존)

@@ -132,7 +132,12 @@ public class FacilityService {
 
     List<FacilityDocument> docs =
         facilitySearchRepository.recommendByChildAge(
-            childAge, latVal, lngVal, excludeFacilityIds, preferredServiceTypes, userDistrict,
+            childAge,
+            latVal,
+            lngVal,
+            excludeFacilityIds,
+            preferredServiceTypes,
+            userDistrict,
             limit);
 
     return docs.stream()
