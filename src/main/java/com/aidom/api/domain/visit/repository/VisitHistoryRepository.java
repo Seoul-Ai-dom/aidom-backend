@@ -62,4 +62,9 @@ public interface VisitHistoryRepository extends JpaRepository<VisitHistory, Long
       @Param("userId") Long userId,
       @Param("statuses") List<VisitStatus> statuses,
       Pageable pageable);
+
+  @Query(
+      "SELECT DISTINCT v.facility.id FROM VisitHistory v"
+          + " WHERE v.user.id = :userId AND v.status <> 'CANCELLED'")
+  List<String> findFacilityIdsByUserId(@Param("userId") Long userId);
 }

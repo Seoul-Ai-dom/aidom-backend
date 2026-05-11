@@ -1,5 +1,6 @@
 package com.aidom.api.domain.facility.service;
 
+import com.aidom.api.domain.bookmark.repository.BookmarkRepository;
 import com.aidom.api.domain.facility.document.FacilityDocument;
 import com.aidom.api.domain.facility.dto.FacilityDetailResponse;
 import com.aidom.api.domain.facility.dto.FacilityFilterResponse;
@@ -13,14 +14,20 @@ import com.aidom.api.domain.facility.enums.ServiceType;
 import com.aidom.api.domain.facility.repository.FacilityRepository;
 import com.aidom.api.domain.facility.repository.FacilitySearchRepository;
 import com.aidom.api.domain.user.entity.Child;
+import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.domain.user.service.ChildService;
+import com.aidom.api.domain.visit.repository.VisitHistoryRepository;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
@@ -40,6 +47,8 @@ public class FacilityService {
   private final FacilitySearchRepository facilitySearchRepository;
   private final FacilityRepository facilityRepository;
   private final ChildService childService;
+  private final BookmarkRepository bookmarkRepository;
+  private final VisitHistoryRepository visitHistoryRepository;
 
   public Page<FacilityListResponse> listFacilities(
       String districtName,
@@ -90,16 +99,45 @@ public class FacilityService {
       Long childId, BigDecimal lat, BigDecimal lng, int limit) {
 
     Child child = childService.getChildById(childId);
-
+    User user = child.getUser();
     int childAge = calculateAge(child.getBirthDate());
 
+    // 찜한 시설 ID 및 서비스 유형 조회
+    List<String> bookmarkedFacilityIds = bookmarkRepository.findFacilityIdsByUserId(user.getId());
+    Set<String> preferredServiceTypes;
+    if (!bookmarkedFacilityIds.isEmpty()) {
+      preferredServiceTypes =
+          facilityRepository.findAllById(bookmarkedFacilityIds).stream()
+              .map(f -> f.getServiceType().getDescription())
+              .collect(Collectors.toSet());
+    } else {
+      preferredServiceTypes = Set.of();
+    }
+
+    // 방문한 시설 ID 조회 (제외 대상)
+    List<String> visitedFacilityIds = visitHistoryRepository.findFacilityIdsByUserId(user.getId());
+    Set<String> excludeFacilityIds = new HashSet<>(visitedFacilityIds);
+
+    // 위치 미제공 시 사용자 주소 기본값 사용
     Double latVal = lat != null ? lat.doubleValue() : null;
     Double lngVal = lng != null ? lng.doubleValue() : null;
+    if (latVal == null && user.getAddressLat() != null) {
+      latVal = user.getAddressLat().doubleValue();
+    }
+    if (lngVal == null && user.getAddressLng() != null) {
+      lngVal = user.getAddressLng().doubleValue();
+    }
+
+    String userDistrict = user.getDistrict();
 
     List<FacilityDocument> docs =
-        facilitySearchRepository.recommendByChildAge(childAge, latVal, lngVal, limit);
+        facilitySearchRepository.recommendByChildAge(
+            childAge, latVal, lngVal, excludeFacilityIds, preferredServiceTypes, userDistrict,
+            limit);
 
-    return docs.stream().map(doc -> toRecommendResponse(doc, childAge)).toList();
+    return docs.stream()
+        .map(doc -> toRecommendResponse(doc, childAge, userDistrict, preferredServiceTypes))
+        .toList();
   }
 
   public List<FacilityListResponse> getNearbyFacilities(
@@ -216,9 +254,35 @@ public class FacilityService {
         stats != null ? stats.getReviewCount() : 0);
   }
 
-  private FacilityRecommendResponse toRecommendResponse(FacilityDocument doc, int childAge) {
+  private FacilityRecommendResponse toRecommendResponse(
+      FacilityDocument doc, int childAge, String userDistrict, Set<String> preferredServiceTypes) {
+
+    List<String> tags = new ArrayList<>();
     String reason =
         String.format("%d세 아이에게 적합한 시설이에요 (%d~%d세 대상)", childAge, doc.getAgeMin(), doc.getAgeMax());
+
+    if (userDistrict != null && userDistrict.equals(doc.getDistrictName())) {
+      reason = String.format("우리 동네(%s)에 있는 추천 시설이에요", userDistrict);
+      tags.add("우리동네");
+    }
+
+    if (preferredServiceTypes != null && preferredServiceTypes.contains(doc.getServiceType())) {
+      if (tags.isEmpty()) {
+        reason = "찜한 시설과 비슷한 유형이에요";
+      }
+      tags.add("관심유형");
+    }
+
+    if (doc.isFree()) {
+      if (tags.isEmpty()) {
+        reason = "무료로 이용 가능해요";
+      }
+      tags.add("무료");
+    }
+
+    if (doc.getAvgRating() >= 4.0) {
+      tags.add("인기");
+    }
 
     return new FacilityRecommendResponse(
         doc.getId(),
@@ -227,6 +291,7 @@ public class FacilityService {
         doc.getDistrictName(),
         BigDecimal.valueOf(doc.getAvgRating()),
         null,
-        reason);
+        reason,
+        tags);
   }
 }
