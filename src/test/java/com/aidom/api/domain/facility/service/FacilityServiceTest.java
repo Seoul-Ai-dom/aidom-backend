@@ -144,8 +144,8 @@ class FacilityServiceTest {
             .gender(Gender.MALE)
             .build();
     given(childService.getChildById(1L)).willReturn(child);
-    given(bookmarkRepository.findFacilityIdsByUserId(any())).willReturn(List.of());
-    given(visitHistoryRepository.findFacilityIdsByUserId(any())).willReturn(List.of());
+    given(bookmarkRepository.findDistinctServiceTypesByUserId(any(), any())).willReturn(List.of());
+    given(visitHistoryRepository.findFacilityIdsByUserId(any(), any())).willReturn(List.of());
 
     FacilityDocument doc = createDocument("FAC001", "강남 키움센터");
     given(
@@ -157,7 +157,9 @@ class FacilityServiceTest {
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0).id()).isEqualTo("FAC001");
-    assertThat(result.get(0).tags()).isNotNull();
+    // 픽스처: districtName=강남구(userDistrict와 동일), isFree=true, avgRating=4.5
+    assertThat(result.get(0).recommendReason()).contains("우리 동네(강남구)");
+    assertThat(result.get(0).tags()).containsExactly("우리동네", "무료", "인기");
   }
 
   @Test
