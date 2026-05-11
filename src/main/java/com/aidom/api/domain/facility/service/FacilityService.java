@@ -1,5 +1,6 @@
 package com.aidom.api.domain.facility.service;
 
+import com.aidom.api.domain.bookmark.enums.BookmarkStatus;
 import com.aidom.api.domain.bookmark.repository.BookmarkRepository;
 import com.aidom.api.domain.facility.document.FacilityDocument;
 import com.aidom.api.domain.facility.dto.FacilityDetailResponse;
@@ -16,6 +17,7 @@ import com.aidom.api.domain.facility.repository.FacilitySearchRepository;
 import com.aidom.api.domain.user.entity.Child;
 import com.aidom.api.domain.user.entity.User;
 import com.aidom.api.domain.user.service.ChildService;
+import com.aidom.api.domain.visit.enums.VisitStatus;
 import com.aidom.api.domain.visit.repository.VisitHistoryRepository;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
@@ -102,20 +104,17 @@ public class FacilityService {
     User user = child.getUser();
     int childAge = calculateAge(child.getBirthDate());
 
-    // 찜한 시설 ID 및 서비스 유형 조회
-    List<String> bookmarkedFacilityIds = bookmarkRepository.findFacilityIdsByUserId(user.getId());
-    Set<String> preferredServiceTypes;
-    if (!bookmarkedFacilityIds.isEmpty()) {
-      preferredServiceTypes =
-          facilityRepository.findAllById(bookmarkedFacilityIds).stream()
-              .map(f -> f.getServiceType().getDescription())
-              .collect(Collectors.toSet());
-    } else {
-      preferredServiceTypes = Set.of();
-    }
+    // 찜한 시설의 서비스 유형 조회
+    Set<String> preferredServiceTypes =
+        bookmarkRepository
+            .findDistinctServiceTypesByUserId(user.getId(), BookmarkStatus.ACTIVE)
+            .stream()
+            .map(ServiceType::getDescription)
+            .collect(Collectors.toSet());
 
     // 방문한 시설 ID 조회 (제외 대상)
-    List<String> visitedFacilityIds = visitHistoryRepository.findFacilityIdsByUserId(user.getId());
+    List<String> visitedFacilityIds =
+        visitHistoryRepository.findFacilityIdsByUserId(user.getId(), VisitStatus.CANCELLED);
     Set<String> excludeFacilityIds = new HashSet<>(visitedFacilityIds);
 
     // 위치 미제공 시 사용자 주소 기본값 사용

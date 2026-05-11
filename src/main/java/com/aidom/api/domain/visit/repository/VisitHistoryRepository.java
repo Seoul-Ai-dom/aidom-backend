@@ -65,6 +65,7 @@ public interface VisitHistoryRepository extends JpaRepository<VisitHistory, Long
 
   @Query(
       "SELECT DISTINCT v.facility.id FROM VisitHistory v"
-          + " WHERE v.user.id = :userId AND v.status <> 'CANCELLED'")
-  List<String> findFacilityIdsByUserId(@Param("userId") Long userId);
+          + " WHERE v.user.id = :userId AND v.status <> :excludedStatus")
+  List<String> findFacilityIdsByUserId(
+      @Param("userId") Long userId, @Param("excludedStatus") VisitStatus excludedStatus);
 }

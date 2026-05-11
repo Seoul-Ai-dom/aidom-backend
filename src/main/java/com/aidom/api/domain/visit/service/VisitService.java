@@ -85,6 +85,12 @@ public class VisitService {
             .findById(request.facilityId())
             .orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));
 
+    if (request.startTime() != null
+        && request.endTime() != null
+        && request.endTime().isBefore(request.startTime())) {
+      throw new CustomException(ErrorCode.INVALID_VISIT_TIME_RANGE);
+    }
+
     VisitHistory visitHistory =
         VisitHistory.builder()
             .user(user)
