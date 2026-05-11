@@ -3,6 +3,7 @@ package com.aidom.api.domain.facility.repository;
 import com.aidom.api.domain.facility.document.FacilityDocument;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -25,7 +26,14 @@ public interface FacilitySearchCustomRepository {
 
   List<FacilityDocument> searchNearby(double lat, double lng, double radiusKm, int limit);
 
-  List<FacilityDocument> recommendByChildAge(int childAge, Double lat, Double lng, int limit);
+  List<FacilityDocument> recommendByChildAge(
+      int childAge,
+      Double lat,
+      Double lng,
+      Set<String> excludeFacilityIds,
+      Set<String> preferredServiceTypes,
+      String userDistrict,
+      int limit);
 
   List<String> getDistinctDistrictNames();
 }

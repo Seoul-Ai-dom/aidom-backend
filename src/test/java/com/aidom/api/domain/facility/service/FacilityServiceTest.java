@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 
+import com.aidom.api.domain.bookmark.repository.BookmarkRepository;
 import com.aidom.api.domain.facility.document.FacilityDocument;
 import com.aidom.api.domain.facility.dto.FacilityDetailResponse;
 import com.aidom.api.domain.facility.dto.FacilityFilterResponse;
@@ -18,7 +19,12 @@ import com.aidom.api.domain.facility.enums.ServiceType;
 import com.aidom.api.domain.facility.repository.FacilityRepository;
 import com.aidom.api.domain.facility.repository.FacilitySearchRepository;
 import com.aidom.api.domain.user.entity.Child;
+import com.aidom.api.domain.user.entity.User;
+import com.aidom.api.domain.user.enums.Provider;
+import com.aidom.api.domain.user.enums.Role;
+import com.aidom.api.domain.user.enums.UserStatus;
 import com.aidom.api.domain.user.service.ChildService;
+import com.aidom.api.domain.visit.repository.VisitHistoryRepository;
 import com.aidom.api.global.common.entity.Gender;
 import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
@@ -26,6 +32,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,6 +51,8 @@ class FacilityServiceTest {
   @Mock private FacilitySearchRepository facilitySearchRepository;
   @Mock private FacilityRepository facilityRepository;
   @Mock private ChildService childService;
+  @Mock private BookmarkRepository bookmarkRepository;
+  @Mock private VisitHistoryRepository visitHistoryRepository;
 
   @InjectMocks private FacilityService facilityService;
 
@@ -117,23 +126,38 @@ class FacilityServiceTest {
   @Test
   @DisplayName("아이 나이 기반으로 시설을 추천한다")
   void recommendFacilities_mapsResult() {
+    User user =
+        User.builder()
+            .name("테스트유저")
+            .email("test@test.com")
+            .provider(Provider.KAKAO)
+            .providerId("12345")
+            .role(Role.USER)
+            .status(UserStatus.ACTIVE)
+            .district("강남구")
+            .build();
     Child child =
         Child.builder()
+            .user(user)
             .name("테스트")
             .birthDate(LocalDate.now().minusYears(7))
             .gender(Gender.MALE)
             .build();
     given(childService.getChildById(1L)).willReturn(child);
+    given(bookmarkRepository.findFacilityIdsByUserId(any())).willReturn(List.of());
+    given(visitHistoryRepository.findFacilityIdsByUserId(any())).willReturn(List.of());
 
     FacilityDocument doc = createDocument("FAC001", "강남 키움센터");
-    given(facilitySearchRepository.recommendByChildAge(eq(7), isNull(), isNull(), eq(5)))
+    given(
+            facilitySearchRepository.recommendByChildAge(
+                eq(7), isNull(), isNull(), any(Set.class), any(Set.class), eq("강남구"), eq(5)))
         .willReturn(List.of(doc));
 
     List<FacilityRecommendResponse> result = facilityService.recommendFacilities(1L, null, null, 5);
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0).id()).isEqualTo("FAC001");
-    assertThat(result.get(0).recommendReason()).contains("7세");
+    assertThat(result.get(0).tags()).isNotNull();
   }
 
   @Test

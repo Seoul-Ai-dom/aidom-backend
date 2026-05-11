@@ -203,7 +203,8 @@ class FacilityControllerTest {
             "강남구",
             new BigDecimal("4.5"),
             null,
-            "7세 아이에게 적합한 시설이에요 (3~12세 대상)");
+            "7세 아이에게 적합한 시설이에요 (3~12세 대상)",
+            List.of("인기"));
 
     given(facilityService.recommendFacilities(eq(1L), isNull(), isNull(), eq(5)))
         .willReturn(List.of(response));

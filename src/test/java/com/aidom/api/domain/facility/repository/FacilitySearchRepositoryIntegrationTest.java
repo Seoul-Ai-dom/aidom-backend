@@ -307,7 +307,7 @@ class FacilitySearchRepositoryIntegrationTest {
   void recommendByChildAge_returnsMatchingFacilities() {
     // 7세 아이 → FAC001(3~12), FAC002(5~15), FAC003(6~13) 모두 매칭
     List<FacilityDocument> results =
-        facilitySearchRepository.recommendByChildAge(7, null, null, 10);
+        facilitySearchRepository.recommendByChildAge(7, null, null, null, null, null, 10);
 
     assertThat(results).hasSize(3);
   }
@@ -317,7 +317,7 @@ class FacilitySearchRepositoryIntegrationTest {
   void recommendByChildAge_noMatch() {
     // 20세 → 모든 시설의 ageMax보다 큼
     List<FacilityDocument> results =
-        facilitySearchRepository.recommendByChildAge(20, null, null, 10);
+        facilitySearchRepository.recommendByChildAge(20, null, null, null, null, null, 10);
 
     assertThat(results).isEmpty();
   }
@@ -326,7 +326,7 @@ class FacilitySearchRepositoryIntegrationTest {
   @DisplayName("recommendByChildAge - 위치 기반 decay가 적용된다")
   void recommendByChildAge_withLocation() {
     List<FacilityDocument> results =
-        facilitySearchRepository.recommendByChildAge(7, 37.5665, 126.978, 10);
+        facilitySearchRepository.recommendByChildAge(7, 37.5665, 126.978, null, null, null, 10);
 
     assertThat(results).isNotEmpty();
   }
@@ -400,7 +400,7 @@ class FacilitySearchRepositoryIntegrationTest {
   void recommendByChildAge_orderedByRating() {
     // 7세: 3개 모두 매칭, avgRating: FAC001=4.5 > FAC002=4.2 > FAC003=3.8
     List<FacilityDocument> results =
-        facilitySearchRepository.recommendByChildAge(7, null, null, 10);
+        facilitySearchRepository.recommendByChildAge(7, null, null, null, null, null, 10);
 
     assertThat(results).hasSize(3);
     assertThat(results.get(0).getId()).isEqualTo("FAC001");

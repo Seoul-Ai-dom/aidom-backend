@@ -9,6 +9,7 @@ import com.aidom.api.domain.facility.document.FacilityDocument;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -158,7 +159,13 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
 
   @Override
   public List<FacilityDocument> recommendByChildAge(
-      int childAge, Double lat, Double lng, int limit) {
+      int childAge,
+      Double lat,
+      Double lng,
+      Set<String> excludeFacilityIds,
+      Set<String> preferredServiceTypes,
+      String userDistrict,
+      int limit) {
 
     NativeQuery query =
         NativeQuery.builder()
@@ -169,26 +176,38 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
                           fs.query(
                               mq ->
                                   mq.bool(
-                                      b ->
-                                          b.filter(
-                                                  f ->
-                                                      f.range(
-                                                          r ->
-                                                              r.number(
-                                                                  n ->
-                                                                      n.field("ageMin")
-                                                                          .lte((double) childAge))))
-                                              .filter(
-                                                  f ->
-                                                      f.range(
-                                                          r ->
-                                                              r.number(
-                                                                  n ->
-                                                                      n.field("ageMax")
-                                                                          .gte(
-                                                                              (double)
-                                                                                  childAge))))));
+                                      b -> {
+                                        b.filter(
+                                            f ->
+                                                f.range(
+                                                    r ->
+                                                        r.number(
+                                                            n ->
+                                                                n.field("ageMin")
+                                                                    .lte((double) childAge))));
+                                        b.filter(
+                                            f ->
+                                                f.range(
+                                                    r ->
+                                                        r.number(
+                                                            n ->
+                                                                n.field("ageMax")
+                                                                    .gte((double) childAge))));
 
+                                        if (excludeFacilityIds != null
+                                            && !excludeFacilityIds.isEmpty()) {
+                                          b.mustNot(
+                                              mn ->
+                                                  mn.ids(
+                                                      ids ->
+                                                          ids.values(
+                                                              excludeFacilityIds.stream()
+                                                                  .toList())));
+                                        }
+                                        return b;
+                                      }));
+
+                          // 1. 평점 가중치 (기존)
                           fs.functions(
                               fn ->
                                   fn.fieldValueFactor(
@@ -200,6 +219,50 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
                                                       .FieldValueFactorModifier.Log1p)
                                               .missing(0.0)));
 
+                          // 2. 자치구 친밀도 (신규)
+                          if (userDistrict != null && !userDistrict.isBlank()) {
+                            fs.functions(
+                                fn ->
+                                    fn.filter(
+                                            f ->
+                                                f.term(
+                                                    t ->
+                                                        t.field("districtName")
+                                                            .value(userDistrict)))
+                                        .weight(3.0));
+                          }
+
+                          // 3. 서비스 유형 선호도 (신규)
+                          if (preferredServiceTypes != null && !preferredServiceTypes.isEmpty()) {
+                            fs.functions(
+                                fn ->
+                                    fn.filter(
+                                            f ->
+                                                f.terms(
+                                                    t ->
+                                                        t.field("serviceType")
+                                                            .terms(
+                                                                tv ->
+                                                                    tv.value(
+                                                                        preferredServiceTypes
+                                                                            .stream()
+                                                                            .map(
+                                                                                co.elastic.clients
+                                                                                        .elasticsearch
+                                                                                        ._types
+                                                                                        .FieldValue
+                                                                                    ::of)
+                                                                            .toList()))))
+                                        .weight(2.0));
+                          }
+
+                          // 4. 무료 시설 가산점 (신규)
+                          fs.functions(
+                              fn ->
+                                  fn.filter(f -> f.term(t -> t.field("isFree").value(true)))
+                                      .weight(1.5));
+
+                          // 5. 거리 감쇠 (기존)
                           if (lat != null && lng != null) {
                             fs.functions(
                                 fn ->

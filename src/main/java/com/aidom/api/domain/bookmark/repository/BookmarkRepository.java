@@ -2,6 +2,7 @@ package com.aidom.api.domain.bookmark.repository;
 
 import com.aidom.api.domain.bookmark.entity.Bookmark;
 import com.aidom.api.domain.bookmark.enums.BookmarkStatus;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -24,4 +25,7 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
   boolean existsByUserIdAndFacilityIdAndStatus(
       Long userId, String facilityId, BookmarkStatus status);
+
+  @Query("SELECT b.facility.id FROM Bookmark b WHERE b.user.id = :userId AND b.status = 'ACTIVE'")
+  List<String> findFacilityIdsByUserId(@Param("userId") Long userId);
 }
