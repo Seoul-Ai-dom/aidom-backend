@@ -8,6 +8,8 @@ import com.aidom.api.domain.facility.dto.FacilityFilterResponse;
 import com.aidom.api.domain.facility.dto.FacilityListResponse;
 import com.aidom.api.domain.facility.dto.FacilityRecommendResponse;
 import com.aidom.api.domain.facility.dto.FacilitySearchResponse;
+import com.aidom.api.domain.facility.dto.ScoringWeights;
+import com.aidom.api.domain.facility.dto.UserRecommendationContext;
 import com.aidom.api.domain.facility.entity.Facility;
 import com.aidom.api.domain.facility.entity.FacilityExternalInfo;
 import com.aidom.api.domain.facility.entity.FacilityStats;
@@ -23,14 +25,16 @@ import com.aidom.api.global.error.CustomException;
 import com.aidom.api.global.error.ErrorCode;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,7 +42,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 @ConditionalOnProperty(
     name = "spring.data.elasticsearch.repositories.enabled",
@@ -51,6 +54,23 @@ public class FacilityService {
   private final ChildService childService;
   private final BookmarkRepository bookmarkRepository;
   private final VisitHistoryRepository visitHistoryRepository;
+  private final Optional<ClaudeWeightClient> claudeWeightClient;
+
+  @Autowired
+  public FacilityService(
+      FacilitySearchRepository facilitySearchRepository,
+      FacilityRepository facilityRepository,
+      ChildService childService,
+      BookmarkRepository bookmarkRepository,
+      VisitHistoryRepository visitHistoryRepository,
+      @Autowired(required = false) ClaudeWeightClient claudeWeightClient) {
+    this.facilitySearchRepository = facilitySearchRepository;
+    this.facilityRepository = facilityRepository;
+    this.childService = childService;
+    this.bookmarkRepository = bookmarkRepository;
+    this.visitHistoryRepository = visitHistoryRepository;
+    this.claudeWeightClient = Optional.ofNullable(claudeWeightClient);
+  }
 
   public Page<FacilityListResponse> listFacilities(
       String districtName,
@@ -112,6 +132,9 @@ public class FacilityService {
             .map(ServiceType::getDescription)
             .collect(Collectors.toSet());
 
+    long bookmarkCount =
+        bookmarkRepository.countByUserIdAndStatus(user.getId(), BookmarkStatus.ACTIVE);
+
     // 방문한 시설 ID 조회 (제외 대상)
     List<String> visitedFacilityIds =
         visitHistoryRepository.findFacilityIdsByUserId(user.getId(), VisitStatus.CANCELLED);
@@ -129,6 +152,23 @@ public class FacilityService {
 
     String userDistrict = user.getDistrict();
 
+    // LLM 기반 가중치 동적 계산
+    UserRecommendationContext context =
+        new UserRecommendationContext(
+            childAge,
+            userDistrict,
+            (int) bookmarkCount,
+            preferredServiceTypes,
+            visitedFacilityIds.size(),
+            latVal != null && lngVal != null,
+            resolveTimeOfDay(),
+            resolveSeason());
+
+    ScoringWeights weights =
+        claudeWeightClient
+            .map(client -> client.calculateWeights(context))
+            .orElse(ScoringWeights.DEFAULT);
+
     List<FacilityDocument> docs =
         facilitySearchRepository.recommendByChildAge(
             childAge,
@@ -137,7 +177,8 @@ public class FacilityService {
             excludeFacilityIds,
             preferredServiceTypes,
             userDistrict,
-            limit);
+            limit,
+            weights);
 
     return docs.stream()
         .map(doc -> toRecommendResponse(doc, childAge, userDistrict, preferredServiceTypes))
@@ -188,6 +229,21 @@ public class FacilityService {
 
   private int calculateAge(LocalDate birthDate) {
     return (int) ChronoUnit.YEARS.between(birthDate, LocalDate.now());
+  }
+
+  private String resolveTimeOfDay() {
+    int hour = LocalTime.now().getHour();
+    if (hour < 12) return "morning";
+    if (hour < 18) return "afternoon";
+    return "evening";
+  }
+
+  private String resolveSeason() {
+    int month = LocalDate.now().getMonthValue();
+    if (month >= 3 && month <= 5) return "spring";
+    if (month >= 6 && month <= 8) return "summer";
+    if (month >= 9 && month <= 11) return "autumn";
+    return "winter";
   }
 
   private FacilityListResponse toListResponse(FacilityDocument doc) {

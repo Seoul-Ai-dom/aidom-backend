@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import com.aidom.api.domain.facility.document.FacilityDocument;
+import com.aidom.api.domain.facility.dto.ScoringWeights;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -166,6 +167,27 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
       Set<String> preferredServiceTypes,
       String userDistrict,
       int limit) {
+    return recommendByChildAge(
+        childAge,
+        lat,
+        lng,
+        excludeFacilityIds,
+        preferredServiceTypes,
+        userDistrict,
+        limit,
+        ScoringWeights.DEFAULT);
+  }
+
+  @Override
+  public List<FacilityDocument> recommendByChildAge(
+      int childAge,
+      Double lat,
+      Double lng,
+      Set<String> excludeFacilityIds,
+      Set<String> preferredServiceTypes,
+      String userDistrict,
+      int limit,
+      ScoringWeights weights) {
 
     NativeQuery query =
         NativeQuery.builder()
@@ -207,19 +229,19 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
                                         return b;
                                       }));
 
-                          // 1. 평점 가중치 (기존)
+                          // 1. 평점 가중치
                           fs.functions(
                               fn ->
                                   fn.fieldValueFactor(
                                       fvf ->
                                           fvf.field("avgRating")
-                                              .factor(1.2)
+                                              .factor(weights.ratingFactor())
                                               .modifier(
                                                   co.elastic.clients.elasticsearch._types.query_dsl
                                                       .FieldValueFactorModifier.Log1p)
                                               .missing(0.0)));
 
-                          // 2. 자치구 친밀도 (신규)
+                          // 2. 자치구 친밀도
                           if (userDistrict != null && !userDistrict.isBlank()) {
                             fs.functions(
                                 fn ->
@@ -229,10 +251,10 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
                                                     t ->
                                                         t.field("districtName")
                                                             .value(userDistrict)))
-                                        .weight(3.0));
+                                        .weight(weights.districtMatchWeight()));
                           }
 
-                          // 3. 서비스 유형 선호도 (신규)
+                          // 3. 서비스 유형 선호도
                           if (preferredServiceTypes != null && !preferredServiceTypes.isEmpty()) {
                             fs.functions(
                                 fn ->
@@ -253,16 +275,16 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
                                                                                         .FieldValue
                                                                                     ::of)
                                                                             .toList()))))
-                                        .weight(2.0));
+                                        .weight(weights.serviceTypeWeight()));
                           }
 
-                          // 4. 무료 시설 가산점 (신규)
+                          // 4. 무료 시설 가산점
                           fs.functions(
                               fn ->
                                   fn.filter(f -> f.term(t -> t.field("isFree").value(true)))
-                                      .weight(1.5));
+                                      .weight(weights.freeWeight()));
 
-                          // 5. 거리 감쇠 (기존)
+                          // 5. 거리 감쇠
                           if (lat != null && lng != null) {
                             fs.functions(
                                 fn ->
@@ -285,7 +307,9 @@ public class FacilitySearchCustomRepositoryImpl implements FacilitySearchCustomR
                                                                                                 lng))))
                                                                     .scale("3km")
                                                                     .offset("0km")
-                                                                    .decay(0.5)))));
+                                                                    .decay(
+                                                                        weights
+                                                                            .distanceDecay())))));
                           }
 
                           fs.scoreMode(FunctionScoreMode.Sum);
