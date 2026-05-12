@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.aidom.api.domain.facility.dto.ScoringWeights;
@@ -43,7 +44,7 @@ class ClaudeWeightClientTest {
     given(restClientBuilder.requestFactory(any())).willReturn(restClientBuilder);
     given(restClientBuilder.build()).willReturn(restClient);
 
-    client = new ClaudeWeightClient(restClientBuilder, properties, objectMapper);
+    client = new ClaudeWeightClient(restClientBuilder, properties, objectMapper, Runnable::run);
   }
 
   @Test
@@ -69,7 +70,7 @@ class ClaudeWeightClientTest {
   }
 
   @Test
-  @DisplayName("정상 Claude JSON 응답이면 파싱된 커스텀 가중치를 반환한다")
+  @DisplayName("정상 Claude JSON 응답이면 비동기 fetch 후 캐시되어 다음 호출에서 파싱된 가중치를 반환한다")
   void validResponse_returnsParsedWeights() {
     properties.setApiKey("test-api-key");
     String response =
@@ -78,13 +79,19 @@ class ClaudeWeightClientTest {
                 + "\"serviceTypeWeight\":4.0,\"freeWeight\":3.0,\"distanceDecay\":0.8}");
     stubApiCall(response);
 
-    ScoringWeights result = client.calculateWeights(createContext());
+    UserRecommendationContext context = createContext();
 
-    assertThat(result.ratingFactor()).isEqualTo(2.0);
-    assertThat(result.districtMatchWeight()).isEqualTo(5.0);
-    assertThat(result.serviceTypeWeight()).isEqualTo(4.0);
-    assertThat(result.freeWeight()).isEqualTo(3.0);
-    assertThat(result.distanceDecay()).isEqualTo(0.8);
+    // 1차: cache miss → 비동기 fetch → DEFAULT 반환
+    ScoringWeights first = client.calculateWeights(context);
+    assertThat(first).isEqualTo(ScoringWeights.DEFAULT);
+
+    // 2차: cache hit → 파싱된 가중치 반환
+    ScoringWeights second = client.calculateWeights(context);
+    assertThat(second.ratingFactor()).isEqualTo(2.0);
+    assertThat(second.districtMatchWeight()).isEqualTo(5.0);
+    assertThat(second.serviceTypeWeight()).isEqualTo(4.0);
+    assertThat(second.freeWeight()).isEqualTo(3.0);
+    assertThat(second.distanceDecay()).isEqualTo(0.8);
   }
 
   @Test
@@ -144,6 +151,68 @@ class ClaudeWeightClientTest {
     ScoringWeights result = client.calculateWeights(createContext());
 
     assertThat(result).isEqualTo(ScoringWeights.DEFAULT);
+  }
+
+  @Test
+  @DisplayName("동일 context로 반복 호출하면 API는 한 번만 호출되고 캐시된 결과를 반환한다")
+  void cachedResult_returnsWithoutApiCall() {
+    properties.setApiKey("test-api-key");
+    String response =
+        claudeResponse(
+            "{\"ratingFactor\":2.0,\"districtMatchWeight\":5.0,"
+                + "\"serviceTypeWeight\":4.0,\"freeWeight\":3.0,\"distanceDecay\":0.8}");
+    stubApiCall(response);
+
+    UserRecommendationContext context = createContext();
+
+    // 1차: cache miss → 비동기 fetch → DEFAULT
+    client.calculateWeights(context);
+
+    // 2차, 3차: cache hit → API 추가 호출 없이 캐시 반환
+    ScoringWeights second = client.calculateWeights(context);
+    ScoringWeights third = client.calculateWeights(context);
+
+    assertThat(second).isEqualTo(third);
+    assertThat(second.ratingFactor()).isEqualTo(2.0);
+    verify(restClient, times(1)).post();
+  }
+
+  @Test
+  @DisplayName("DEFAULT 결과는 캐시되지 않아 다음 호출에서 커스텀 가중치를 반환할 수 있다")
+  void defaultResult_isNotCached() {
+    properties.setApiKey("test-api-key");
+
+    String response =
+        claudeResponse(
+            "{\"ratingFactor\":2.0,\"districtMatchWeight\":5.0,"
+                + "\"serviceTypeWeight\":4.0,\"freeWeight\":3.0,\"distanceDecay\":0.8}");
+
+    // retrieve()를 연속 스텁: 1차 예외, 2차 정상
+    given(restClient.post()).willReturn(requestBodyUriSpec);
+    given(requestBodyUriSpec.uri(anyString())).willReturn(requestBodySpec);
+    given(requestBodySpec.contentType(any(MediaType.class))).willReturn(requestBodySpec);
+    given(requestBodySpec.header(anyString(), any(String[].class))).willReturn(requestBodySpec);
+    given(requestBodySpec.body((Object) any())).willReturn(requestBodySpec);
+    given(requestBodySpec.retrieve())
+        .willThrow(new RestClientException("Connection refused"))
+        .willReturn(responseSpec);
+    given(responseSpec.body(String.class)).willReturn(response);
+
+    UserRecommendationContext context = createContext();
+
+    // 1차: 비동기 fetch 실패 → DEFAULT, 캐시 안 됨
+    ScoringWeights first = client.calculateWeights(context);
+    assertThat(first).isEqualTo(ScoringWeights.DEFAULT);
+
+    // 2차: 비동기 fetch 성공 → DEFAULT 반환, 캐시 적재
+    ScoringWeights second = client.calculateWeights(context);
+    assertThat(second).isEqualTo(ScoringWeights.DEFAULT);
+
+    // 3차: cache hit → 커스텀 가중치
+    ScoringWeights third = client.calculateWeights(context);
+    assertThat(third.ratingFactor()).isEqualTo(2.0);
+    assertThat(third).isNotEqualTo(ScoringWeights.DEFAULT);
+    verify(restClient, times(2)).post();
   }
 
   private void stubApiCall(String responseBody) {

@@ -5,6 +5,13 @@ import com.aidom.api.domain.facility.dto.UserRecommendationContext;
 import com.aidom.api.global.config.ClaudeProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
@@ -39,13 +46,27 @@ public class ClaudeWeightClient {
   private final RestClient restClient;
   private final ClaudeProperties properties;
   private final ObjectMapper objectMapper;
+  private final Cache<UserRecommendationContext, ScoringWeights> weightCache;
+  private final Executor executor;
+  private final Set<UserRecommendationContext> pendingContexts = ConcurrentHashMap.newKeySet();
 
   public ClaudeWeightClient(
       RestClient.Builder restClientBuilder,
       ClaudeProperties properties,
       ObjectMapper objectMapper) {
+    this(restClientBuilder, properties, objectMapper, ForkJoinPool.commonPool());
+  }
+
+  ClaudeWeightClient(
+      RestClient.Builder restClientBuilder,
+      ClaudeProperties properties,
+      ObjectMapper objectMapper,
+      Executor executor) {
     this.properties = properties;
     this.objectMapper = objectMapper;
+    this.executor = executor;
+    this.weightCache =
+        Caffeine.newBuilder().maximumSize(200).expireAfterWrite(30, TimeUnit.MINUTES).build();
 
     SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
     requestFactory.setConnectTimeout(properties.getConnectTimeout());
@@ -60,7 +81,32 @@ public class ClaudeWeightClient {
       return ScoringWeights.DEFAULT;
     }
 
+    ScoringWeights cached = weightCache.getIfPresent(context);
+    if (cached != null) {
+      log.debug("Returning cached weights for context: {}", context);
+      return cached;
+    }
+
+    if (pendingContexts.add(context)) {
+      executor.execute(() -> fetchAndCacheWeights(context));
+    }
+    return ScoringWeights.DEFAULT;
+  }
+
+  private void fetchAndCacheWeights(UserRecommendationContext context) {
     try {
+      ScoringWeights result = callClaudeApi(context);
+      if (!result.equals(ScoringWeights.DEFAULT)) {
+        weightCache.put(context, result);
+      }
+    } finally {
+      pendingContexts.remove(context);
+    }
+  }
+
+  private ScoringWeights callClaudeApi(UserRecommendationContext context) {
+    try {
+      String apiKey = properties.getApiKey();
       String userMessage = objectMapper.writeValueAsString(context);
 
       String requestBody =
