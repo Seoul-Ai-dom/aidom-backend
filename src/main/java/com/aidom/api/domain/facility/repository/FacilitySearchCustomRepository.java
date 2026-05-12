@@ -1,6 +1,7 @@
 package com.aidom.api.domain.facility.repository;
 
 import com.aidom.api.domain.facility.document.FacilityDocument;
+import com.aidom.api.domain.facility.dto.ScoringWeights;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
@@ -34,6 +35,16 @@ public interface FacilitySearchCustomRepository {
       Set<String> preferredServiceTypes,
       String userDistrict,
       int limit);
+
+  List<FacilityDocument> recommendByChildAge(
+      int childAge,
+      Double lat,
+      Double lng,
+      Set<String> excludeFacilityIds,
+      Set<String> preferredServiceTypes,
+      String userDistrict,
+      int limit,
+      ScoringWeights weights);
 
   List<String> getDistinctDistrictNames();
 }

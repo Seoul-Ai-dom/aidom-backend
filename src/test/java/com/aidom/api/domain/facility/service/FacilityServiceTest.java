@@ -14,6 +14,8 @@ import com.aidom.api.domain.facility.dto.FacilityFilterResponse;
 import com.aidom.api.domain.facility.dto.FacilityListResponse;
 import com.aidom.api.domain.facility.dto.FacilityRecommendResponse;
 import com.aidom.api.domain.facility.dto.FacilitySearchResponse;
+import com.aidom.api.domain.facility.dto.ScoringWeights;
+import com.aidom.api.domain.facility.dto.UserRecommendationContext;
 import com.aidom.api.domain.facility.entity.Facility;
 import com.aidom.api.domain.facility.enums.ServiceType;
 import com.aidom.api.domain.facility.repository.FacilityRepository;
@@ -33,12 +35,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -53,8 +56,22 @@ class FacilityServiceTest {
   @Mock private ChildService childService;
   @Mock private BookmarkRepository bookmarkRepository;
   @Mock private VisitHistoryRepository visitHistoryRepository;
+  @Mock private ClaudeWeightClient claudeWeightClient;
+  @Mock private ObjectProvider<ClaudeWeightClient> claudeWeightClientProvider;
 
-  @InjectMocks private FacilityService facilityService;
+  private FacilityService facilityService;
+
+  @BeforeEach
+  void setUp() {
+    facilityService =
+        new FacilityService(
+            facilitySearchRepository,
+            facilityRepository,
+            childService,
+            bookmarkRepository,
+            visitHistoryRepository,
+            claudeWeightClientProvider);
+  }
 
   @Test
   @DisplayName("키워드 검색 시 ES 결과를 FacilitySearchResponse로 매핑한다")
@@ -145,12 +162,20 @@ class FacilityServiceTest {
             .build();
     given(childService.getChildById(1L)).willReturn(child);
     given(bookmarkRepository.findDistinctServiceTypesByUserId(any(), any())).willReturn(List.of());
+    given(bookmarkRepository.countByUserIdAndStatus(any(), any())).willReturn(0L);
     given(visitHistoryRepository.findFacilityIdsByUserId(any(), any())).willReturn(List.of());
 
     FacilityDocument doc = createDocument("FAC001", "강남 키움센터");
     given(
             facilitySearchRepository.recommendByChildAge(
-                eq(7), isNull(), isNull(), any(Set.class), any(Set.class), eq("강남구"), eq(5)))
+                eq(7),
+                isNull(),
+                isNull(),
+                any(Set.class),
+                any(Set.class),
+                eq("강남구"),
+                eq(5),
+                eq(ScoringWeights.DEFAULT)))
         .willReturn(List.of(doc));
 
     List<FacilityRecommendResponse> result = facilityService.recommendFacilities(1L, null, null, 5);
@@ -203,6 +228,65 @@ class FacilityServiceTest {
     assertThat(result.districts()).hasSize(2);
     assertThat(result.ageRanges()).isNotEmpty();
     assertThat(result.careTypes()).isNotEmpty();
+  }
+
+  @Test
+  @DisplayName("ClaudeWeightClient가 커스텀 가중치를 반환하면 해당 가중치로 추천한다")
+  void recommendFacilities_withClaudeClient_usesCustomWeights() {
+    ScoringWeights customWeights = new ScoringWeights(2.0, 5.0, 4.0, 3.0, 0.8);
+    given(claudeWeightClient.calculateWeights(any(UserRecommendationContext.class)))
+        .willReturn(customWeights);
+    given(claudeWeightClientProvider.getIfAvailable()).willReturn(claudeWeightClient);
+
+    FacilityService serviceWithClaude =
+        new FacilityService(
+            facilitySearchRepository,
+            facilityRepository,
+            childService,
+            bookmarkRepository,
+            visitHistoryRepository,
+            claudeWeightClientProvider);
+
+    User user =
+        User.builder()
+            .name("테스트유저")
+            .email("test@test.com")
+            .provider(Provider.KAKAO)
+            .providerId("12345")
+            .role(Role.USER)
+            .status(UserStatus.ACTIVE)
+            .district("강남구")
+            .build();
+    Child child =
+        Child.builder()
+            .user(user)
+            .name("테스트")
+            .birthDate(LocalDate.now().minusYears(5))
+            .gender(Gender.MALE)
+            .build();
+    given(childService.getChildById(1L)).willReturn(child);
+    given(bookmarkRepository.findDistinctServiceTypesByUserId(any(), any())).willReturn(List.of());
+    given(bookmarkRepository.countByUserIdAndStatus(any(), any())).willReturn(0L);
+    given(visitHistoryRepository.findFacilityIdsByUserId(any(), any())).willReturn(List.of());
+
+    FacilityDocument doc = createDocument("FAC001", "강남 키움센터");
+    given(
+            facilitySearchRepository.recommendByChildAge(
+                eq(5),
+                isNull(),
+                isNull(),
+                any(Set.class),
+                any(Set.class),
+                eq("강남구"),
+                eq(5),
+                eq(customWeights)))
+        .willReturn(List.of(doc));
+
+    List<FacilityRecommendResponse> result =
+        serviceWithClaude.recommendFacilities(1L, null, null, 5);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).id()).isEqualTo("FAC001");
   }
 
   private FacilityDocument createDocument(String id, String name) {

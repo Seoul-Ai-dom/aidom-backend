@@ -27,6 +27,8 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
   boolean existsByUserIdAndFacilityIdAndStatus(
       Long userId, String facilityId, BookmarkStatus status);
 
+  long countByUserIdAndStatus(Long userId, BookmarkStatus status);
+
   @Query("SELECT b.facility.id FROM Bookmark b WHERE b.user.id = :userId AND b.status = :status")
   List<String> findFacilityIdsByUserId(
       @Param("userId") Long userId, @Param("status") BookmarkStatus status);
