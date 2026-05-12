@@ -99,7 +99,7 @@ class LocalTestAccountSeeder implements ApplicationRunner {
             address_lat,
             address_lng,
             deleted_at
-        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, null)
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, null)
         """,
         account.userId(),
         Timestamp.valueOf(now),

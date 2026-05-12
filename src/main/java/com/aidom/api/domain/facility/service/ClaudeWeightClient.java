@@ -51,6 +51,7 @@ public class ClaudeWeightClient {
   private final Executor executor;
   private final Set<UserRecommendationContext> pendingContexts = ConcurrentHashMap.newKeySet();
 
+  @org.springframework.beans.factory.annotation.Autowired
   public ClaudeWeightClient(
       RestClient.Builder restClientBuilder,
       ClaudeProperties properties,
