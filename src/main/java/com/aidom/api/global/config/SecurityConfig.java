@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 
 @Configuration
@@ -53,7 +54,9 @@ public class SecurityConfig {
                       return config;
                     }))
         .sessionManagement(
-            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+        .securityContext(
+            sc -> sc.securityContextRepository(new RequestAttributeSecurityContextRepository()))
         .exceptionHandling(
             e ->
                 e.authenticationEntryPoint(authenticationEntryPoint)
