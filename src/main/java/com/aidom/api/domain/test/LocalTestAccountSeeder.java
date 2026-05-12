@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-@Profile("local")
+@Profile({"local", "test"})
 @Component
 @RequiredArgsConstructor
 class LocalTestAccountSeeder implements ApplicationRunner {

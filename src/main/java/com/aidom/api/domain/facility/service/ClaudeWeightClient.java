@@ -3,6 +3,7 @@ package com.aidom.api.domain.facility.service;
 import com.aidom.api.domain.facility.dto.ScoringWeights;
 import com.aidom.api.domain.facility.dto.UserRecommendationContext;
 import com.aidom.api.global.config.ClaudeProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -167,7 +168,8 @@ public class ClaudeWeightClient {
     }
   }
 
-  private record ClaudeRequest(String model, int max_tokens, String system, Message[] messages) {}
+  private record ClaudeRequest(
+      String model, @JsonProperty("max_tokens") int maxTokens, String system, Message[] messages) {}
 
   private record Message(String role, String content) {}
 }

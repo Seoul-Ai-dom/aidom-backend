@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -56,6 +57,7 @@ class FacilityServiceTest {
   @Mock private BookmarkRepository bookmarkRepository;
   @Mock private VisitHistoryRepository visitHistoryRepository;
   @Mock private ClaudeWeightClient claudeWeightClient;
+  @Mock private ObjectProvider<ClaudeWeightClient> claudeWeightClientProvider;
 
   private FacilityService facilityService;
 
@@ -68,7 +70,7 @@ class FacilityServiceTest {
             childService,
             bookmarkRepository,
             visitHistoryRepository,
-            null);
+            claudeWeightClientProvider);
   }
 
   @Test
@@ -234,6 +236,7 @@ class FacilityServiceTest {
     ScoringWeights customWeights = new ScoringWeights(2.0, 5.0, 4.0, 3.0, 0.8);
     given(claudeWeightClient.calculateWeights(any(UserRecommendationContext.class)))
         .willReturn(customWeights);
+    given(claudeWeightClientProvider.getIfAvailable()).willReturn(claudeWeightClient);
 
     FacilityService serviceWithClaude =
         new FacilityService(
@@ -242,7 +245,7 @@ class FacilityServiceTest {
             childService,
             bookmarkRepository,
             visitHistoryRepository,
-            claudeWeightClient);
+            claudeWeightClientProvider);
 
     User user =
         User.builder()

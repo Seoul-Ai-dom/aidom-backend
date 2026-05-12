@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Profile("local")
+@Profile({"local", "test"})
 @RestController
 @RequestMapping("/api/test/accounts")
 public class LocalTestAccountController {
@@ -22,7 +22,7 @@ public class LocalTestAccountController {
   public ResponseEntity<LocalTestAccountsResponse> getLocalTestAccounts() {
     return ResponseEntity.ok(
         new LocalTestAccountsResponse(
-            "현재 백엔드는 로그인 토큰을 검증하지 않습니다. 아래 토큰은 프론트/수동 API 테스트용 고정 mock 값입니다.",
+            "로컬/테스트 환경 전용 고정 mock 계정입니다. 실제 JWT 토큰이 아니므로 인증이 필요한 API에는 사용할 수 없습니다.",
             ACCOUNTS.stream().map(this::toAccountResponse).toList()));
   }
 

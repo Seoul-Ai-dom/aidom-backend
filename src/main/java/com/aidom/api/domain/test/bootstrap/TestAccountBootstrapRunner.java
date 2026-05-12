@@ -148,8 +148,15 @@ public class TestAccountBootstrapRunner implements ApplicationRunner {
         user.getProviderId(),
         user.getStatus());
     log.warn("childIds={}", childSummary);
-    log.warn("accessToken={}", accessToken);
-    log.warn("authorizationHeader=Bearer {}", accessToken);
+    if (properties.isLogAccessToken()) {
+      log.warn("accessToken={}", accessToken);
+      log.warn("authorizationHeader=Bearer {}", accessToken);
+    } else {
+      log.warn(
+          "accessToken={}...{}",
+          accessToken.substring(0, Math.min(8, accessToken.length())),
+          "(masked)");
+    }
     log.warn("accessTokenExpiresInSeconds={}", jwtTokenProvider.getAccessTokenExpiresInSeconds());
     if (properties.isLogRefreshToken()) {
       log.warn("refreshToken={}", refreshToken);

@@ -60,6 +60,8 @@ public class TestAccountBootstrapProperties {
 
   @NotNull private BigDecimal addressLng = new BigDecimal("127.0276100");
 
+  private boolean logAccessToken = false;
+
   private boolean logRefreshToken = false;
 
   @Valid

@@ -31,10 +31,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +42,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 @Transactional(readOnly = true)
 @ConditionalOnProperty(
     name = "spring.data.elasticsearch.repositories.enabled",
@@ -54,23 +55,7 @@ public class FacilityService {
   private final ChildService childService;
   private final BookmarkRepository bookmarkRepository;
   private final VisitHistoryRepository visitHistoryRepository;
-  private final Optional<ClaudeWeightClient> claudeWeightClient;
-
-  @Autowired
-  public FacilityService(
-      FacilitySearchRepository facilitySearchRepository,
-      FacilityRepository facilityRepository,
-      ChildService childService,
-      BookmarkRepository bookmarkRepository,
-      VisitHistoryRepository visitHistoryRepository,
-      @Autowired(required = false) ClaudeWeightClient claudeWeightClient) {
-    this.facilitySearchRepository = facilitySearchRepository;
-    this.facilityRepository = facilityRepository;
-    this.childService = childService;
-    this.bookmarkRepository = bookmarkRepository;
-    this.visitHistoryRepository = visitHistoryRepository;
-    this.claudeWeightClient = Optional.ofNullable(claudeWeightClient);
-  }
+  private final ObjectProvider<ClaudeWeightClient> claudeWeightClient;
 
   public Page<FacilityListResponse> listFacilities(
       String districtName,
@@ -157,17 +142,16 @@ public class FacilityService {
         new UserRecommendationContext(
             childAge,
             userDistrict,
-            (int) bookmarkCount,
+            Math.toIntExact(bookmarkCount),
             preferredServiceTypes,
             visitedFacilityIds.size(),
             latVal != null && lngVal != null,
             resolveTimeOfDay(),
             resolveSeason());
 
+    ClaudeWeightClient weightClient = claudeWeightClient.getIfAvailable();
     ScoringWeights weights =
-        claudeWeightClient
-            .map(client -> client.calculateWeights(context))
-            .orElse(ScoringWeights.DEFAULT);
+        weightClient != null ? weightClient.calculateWeights(context) : ScoringWeights.DEFAULT;
 
     List<FacilityDocument> docs =
         facilitySearchRepository.recommendByChildAge(
