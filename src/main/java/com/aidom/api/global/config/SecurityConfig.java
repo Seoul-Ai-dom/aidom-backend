@@ -56,7 +56,7 @@ public class SecurityConfig {
                       return config;
                     }))
         .sessionManagement(
-            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .exceptionHandling(
             e ->
                 e.authenticationEntryPoint(authenticationEntryPoint)
@@ -68,6 +68,7 @@ public class SecurityConfig {
                         "/api/v1/oauth2/**",
                         "/oauth2/**",
                         "/login/oauth2/**",
+                        "/error",
                         "/auth/callback",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
