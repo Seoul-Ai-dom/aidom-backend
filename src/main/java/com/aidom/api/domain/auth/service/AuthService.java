@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -106,30 +105,15 @@ public class AuthService {
   }
 
   private User createUser(Provider provider, String providerId, String email, String name) {
-    try {
-      return userRepository.save(
-          User.builder()
-              .provider(provider)
-              .providerId(providerId)
-              .email(email)
-              .name(name)
-              .role(Role.USER)
-              .status(UserStatus.ONBOARDING)
-              .build());
-    } catch (DataIntegrityViolationException e) {
-      return userRepository
-          .findByEmailIncludingDeleted(email)
-          .map(
-              existing -> {
-                if (existing.isWithdrawn()) {
-                  existing.reactivateForRejoin();
-                }
-                existing.syncSocialIdentity(provider, providerId);
-                existing.updateSocialProfile(name, email);
-                return existing;
-              })
-          .orElseThrow(() -> e);
-    }
+    return userRepository.save(
+        User.builder()
+            .provider(provider)
+            .providerId(providerId)
+            .email(email)
+            .name(name)
+            .role(Role.USER)
+            .status(UserStatus.ONBOARDING)
+            .build());
   }
 
   private User recoverUser(

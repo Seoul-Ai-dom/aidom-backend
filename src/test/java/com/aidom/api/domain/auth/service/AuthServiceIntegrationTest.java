@@ -46,6 +46,23 @@ class AuthServiceIntegrationTest {
   }
 
   @Test
+  @DisplayName("OAuth 로그인 신규 사용자는 상세 프로필 없이 ONBOARDING 상태로 생성된다")
+  void handleOAuthLogin_newUser_createsOnboardingUserWithoutProfileFields() {
+    String rawCode =
+        authService.handleOAuthLogin(
+            Provider.KAKAO, "kakao-onboarding-1", "onboarding@aidom.kr", "카카오유저");
+
+    User user = userRepository.findByEmail("onboarding@aidom.kr").orElseThrow();
+
+    assertThat(rawCode).isNotBlank();
+    assertThat(user.getStatus()).isEqualTo(UserStatus.ONBOARDING);
+    assertThat(user.getBirthDate()).isNull();
+    assertThat(user.getPhone()).isNull();
+    assertThat(user.getDistrict()).isNull();
+    assertThat(authCodeRepository.findByCodeHash(hash(rawCode))).isPresent();
+  }
+
+  @Test
   @DisplayName("auth code를 교환하면 access/refresh token이 발급되고 코드가 사용 처리된다")
   void exchangeCode_success() {
     User user = userRepository.save(createUser("kakao-1", "alpha@aidom.kr"));
