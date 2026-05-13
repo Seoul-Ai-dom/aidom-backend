@@ -57,7 +57,6 @@ public class AuthService {
     if (email == null || email.isBlank()) {
       throw new CustomException(ErrorCode.UNAUTHORIZED);
     }
-
     String normalizedEmail = email.trim();
 
     User user = findExistingUser(provider, providerId, normalizedEmail, name);
