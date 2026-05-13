@@ -9,7 +9,10 @@ import com.aidom.api.global.security.HttpCookieOAuth2AuthorizationRequestReposit
 import com.aidom.api.global.security.JwtAuthenticationFilter;
 import com.aidom.api.global.security.ProblemDetailAccessDeniedHandler;
 import com.aidom.api.global.security.ProblemDetailAuthenticationEntryPoint;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +27,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
+@Slf4j
 @Configuration
 @EnableConfigurationProperties(AppAuthProperties.class)
 public class SecurityConfig {
@@ -90,7 +94,15 @@ public class SecurityConfig {
                           a.authorizationRequestRepository(
                               new HttpCookieOAuth2AuthorizationRequestRepository()))
                   .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
-                  .successHandler(oAuth2AuthenticationSuccessHandler));
+                  .successHandler(oAuth2AuthenticationSuccessHandler)
+                  .failureHandler(
+                      (request, response, exception) -> {
+                        log.error("OAuth2 login failed: {}", exception.getMessage(), exception);
+                        String redirectUri = appAuthProperties.getOAuth2().getDefaultSuccessUri();
+                        String errorMsg =
+                            URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
+                        response.sendRedirect(redirectUri + "?error=" + errorMsg);
+                      }));
     }
     return http.build();
   }
