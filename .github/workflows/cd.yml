@@ -57,15 +57,19 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           ES_URL: ${{ secrets.ES_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          AUTH_SUCCESS_URI: ${{ secrets.AUTH_SUCCESS_URI }}
+          AUTH_REDIRECT_URIS: ${{ secrets.AUTH_REDIRECT_URIS }}
+          AUTH_ALLOWED_ORIGINS: ${{ secrets.AUTH_ALLOWED_ORIGINS }}
           KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
           KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
           KAKAO_REDIRECT_URI: ${{ secrets.KAKAO_REDIRECT_URI }}
+          KAKAO_ADMIN_KEY: ${{ secrets.KAKAO_ADMIN_KEY }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           command_timeout: 30m
-          envs: REGISTRY,IMAGE_NAME,GITHUB_SHA,DB_URL,DB_USERNAME,DB_PASSWORD,ES_URL,JWT_SECRET,KAKAO_CLIENT_ID,KAKAO_CLIENT_SECRET,KAKAO_REDIRECT_URI
+          envs: REGISTRY,IMAGE_NAME,GITHUB_SHA,DB_URL,DB_USERNAME,DB_PASSWORD,ES_URL,JWT_SECRET,AUTH_SUCCESS_URI,AUTH_REDIRECT_URIS,AUTH_ALLOWED_ORIGINS,KAKAO_CLIENT_ID,KAKAO_CLIENT_SECRET,KAKAO_REDIRECT_URI,KAKAO_ADMIN_KEY
           script: |
             # GHCR 로그인
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -84,9 +88,13 @@ jobs:
               -e DB_USERNAME \
               -e DB_PASSWORD \
               -e JWT_SECRET \
+              -e AUTH_SUCCESS_URI \
+              -e AUTH_REDIRECT_URIS \
+              -e AUTH_ALLOWED_ORIGINS \
               -e KAKAO_CLIENT_ID \
               -e KAKAO_CLIENT_SECRET \
               -e KAKAO_REDIRECT_URI \
+              -e KAKAO_ADMIN_KEY \
               -e ES_URL \
               $NEW_IMAGE
 
@@ -121,9 +129,13 @@ jobs:
               -e DB_USERNAME \
               -e DB_PASSWORD \
               -e JWT_SECRET \
+              -e AUTH_SUCCESS_URI \
+              -e AUTH_REDIRECT_URIS \
+              -e AUTH_ALLOWED_ORIGINS \
               -e KAKAO_CLIENT_ID \
               -e KAKAO_CLIENT_SECRET \
               -e KAKAO_REDIRECT_URI \
+              -e KAKAO_ADMIN_KEY \
               -e ES_URL \
               $NEW_IMAGE
 
