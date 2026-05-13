@@ -99,7 +99,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   }
 
   private void redirectWithError(
-      HttpServletRequest request, HttpServletResponse response, String redirectUri, String errorCode)
+      HttpServletRequest request,
+      HttpServletResponse response,
+      String redirectUri,
+      String errorCode)
       throws IOException {
     String target =
         UriComponentsBuilder.fromUriString(redirectUri)
