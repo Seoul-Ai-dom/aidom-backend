@@ -11,9 +11,11 @@ import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
+@Slf4j
 public class HttpCookieOAuth2AuthorizationRequestRepository
     implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
@@ -31,12 +33,14 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
       HttpServletRequest request,
       HttpServletResponse response) {
     if (authorizationRequest == null) {
-      deleteCookie(response);
+      deleteCookie(request, response);
       return;
     }
     Cookie cookie = new Cookie(COOKIE_NAME, serialize(authorizationRequest));
     cookie.setPath("/");
     cookie.setHttpOnly(true);
+    cookie.setSecure(request.isSecure());
+    cookie.setAttribute("SameSite", "Lax");
     cookie.setMaxAge(COOKIE_EXPIRE_SECONDS);
     response.addCookie(cookie);
   }
@@ -45,7 +49,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
   public OAuth2AuthorizationRequest removeAuthorizationRequest(
       HttpServletRequest request, HttpServletResponse response) {
     OAuth2AuthorizationRequest authorizationRequest = loadAuthorizationRequest(request);
-    deleteCookie(response);
+    deleteCookie(request, response);
     return authorizationRequest;
   }
 
@@ -57,9 +61,11 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
     return Arrays.stream(cookies).filter(c -> COOKIE_NAME.equals(c.getName())).findFirst();
   }
 
-  private void deleteCookie(HttpServletResponse response) {
+  private void deleteCookie(HttpServletRequest request, HttpServletResponse response) {
     Cookie cookie = new Cookie(COOKIE_NAME, "");
     cookie.setPath("/");
+    cookie.setSecure(request.isSecure());
+    cookie.setAttribute("SameSite", "Lax");
     cookie.setMaxAge(0);
     response.addCookie(cookie);
   }
@@ -79,7 +85,8 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
         new ObjectInputStream(new ByteArrayInputStream(Base64.getUrlDecoder().decode(value)))) {
       return (OAuth2AuthorizationRequest) ois.readObject();
     } catch (IOException | ClassNotFoundException e) {
-      throw new IllegalStateException("Failed to deserialize OAuth2AuthorizationRequest", e);
+      log.warn("Failed to deserialize OAuth2AuthorizationRequest: {}", e.getMessage());
+      return null;
     }
   }
 }
