@@ -1,6 +1,7 @@
 package com.aidom.api.global.config;
 
 import com.aidom.api.domain.auth.service.CustomOAuth2UserService;
+import com.aidom.api.domain.auth.service.OAuth2AuthenticationFailureHandler;
 import com.aidom.api.domain.auth.service.OAuth2AuthenticationSuccessHandler;
 import com.aidom.api.domain.user.enums.Role;
 import com.aidom.api.domain.user.enums.UserStatus;
@@ -35,6 +36,7 @@ public class SecurityConfig {
       ProblemDetailAuthenticationEntryPoint authenticationEntryPoint,
       ProblemDetailAccessDeniedHandler accessDeniedHandler,
       CustomOAuth2UserService customOAuth2UserService,
+      OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler,
       OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
       ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider,
       AppAuthProperties appAuthProperties)
@@ -90,7 +92,8 @@ public class SecurityConfig {
                           a.authorizationRequestRepository(
                               new HttpCookieOAuth2AuthorizationRequestRepository()))
                   .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
-                  .successHandler(oAuth2AuthenticationSuccessHandler));
+                  .successHandler(oAuth2AuthenticationSuccessHandler)
+                  .failureHandler(oAuth2AuthenticationFailureHandler));
     }
     return http.build();
   }
