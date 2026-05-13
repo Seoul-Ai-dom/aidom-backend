@@ -5,6 +5,7 @@ import com.aidom.api.domain.auth.service.OAuth2AuthenticationSuccessHandler;
 import com.aidom.api.domain.user.enums.Role;
 import com.aidom.api.domain.user.enums.UserStatus;
 import com.aidom.api.global.security.AuthenticatedUserPrincipal;
+import com.aidom.api.global.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.aidom.api.global.security.JwtAuthenticationFilter;
 import com.aidom.api.global.security.ProblemDetailAccessDeniedHandler;
 import com.aidom.api.global.security.ProblemDetailAuthenticationEntryPoint;
@@ -21,7 +22,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 
 @Configuration
@@ -54,9 +54,7 @@ public class SecurityConfig {
                       return config;
                     }))
         .sessionManagement(
-            session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-        .securityContext(
-            sc -> sc.securityContextRepository(new RequestAttributeSecurityContextRepository()))
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .exceptionHandling(
             e ->
                 e.authenticationEntryPoint(authenticationEntryPoint)
@@ -87,6 +85,10 @@ public class SecurityConfig {
       http.oauth2Login(
           oauth2 ->
               oauth2
+                  .authorizationEndpoint(
+                      a ->
+                          a.authorizationRequestRepository(
+                              new HttpCookieOAuth2AuthorizationRequestRepository()))
                   .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
                   .successHandler(oAuth2AuthenticationSuccessHandler));
     }
