@@ -1,6 +1,7 @@
 package com.aidom.api.global.config;
 
 import com.aidom.api.domain.auth.service.CustomOAuth2UserService;
+import com.aidom.api.domain.auth.service.OAuth2AuthenticationFailureHandler;
 import com.aidom.api.domain.auth.service.OAuth2AuthenticationSuccessHandler;
 import com.aidom.api.domain.user.enums.Role;
 import com.aidom.api.domain.user.enums.UserStatus;
@@ -9,10 +10,7 @@ import com.aidom.api.global.security.HttpCookieOAuth2AuthorizationRequestReposit
 import com.aidom.api.global.security.JwtAuthenticationFilter;
 import com.aidom.api.global.security.ProblemDetailAccessDeniedHandler;
 import com.aidom.api.global.security.ProblemDetailAuthenticationEntryPoint;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +25,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
-@Slf4j
 @Configuration
 @EnableConfigurationProperties(AppAuthProperties.class)
 public class SecurityConfig {
@@ -39,6 +36,7 @@ public class SecurityConfig {
       ProblemDetailAuthenticationEntryPoint authenticationEntryPoint,
       ProblemDetailAccessDeniedHandler accessDeniedHandler,
       CustomOAuth2UserService customOAuth2UserService,
+      OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler,
       OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
       ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider,
       AppAuthProperties appAuthProperties)
@@ -95,14 +93,7 @@ public class SecurityConfig {
                               new HttpCookieOAuth2AuthorizationRequestRepository()))
                   .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
                   .successHandler(oAuth2AuthenticationSuccessHandler)
-                  .failureHandler(
-                      (request, response, exception) -> {
-                        log.error("OAuth2 login failed: {}", exception.getMessage(), exception);
-                        String redirectUri = appAuthProperties.getOAuth2().getDefaultSuccessUri();
-                        String errorMsg =
-                            URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
-                        response.sendRedirect(redirectUri + "?error=" + errorMsg);
-                      }));
+                  .failureHandler(oAuth2AuthenticationFailureHandler));
     }
     return http.build();
   }
